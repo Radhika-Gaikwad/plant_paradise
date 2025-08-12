@@ -8,12 +8,13 @@ import Orders from "../pages/user/Orders";
 import Cart from "../pages/user/Cart";
 import Products from "../pages/user/Products";
 import PlaceOrder from "../pages/user/PlaceOrder";
-
+import LoginForm from "../features/authentication/LoginForm";
 const UserRoutes = () => {
   return (
     <Routes>
       <Route element={<UserLayout />}>
         <Route path="/" element={<Home />} />
+          <Route path="/login" element={<LoginForm />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/cart" element={<Cart />} />

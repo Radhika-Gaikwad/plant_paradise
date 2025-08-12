@@ -1,12 +1,13 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "../components/Header"; // <-- Import the new header
+import Footer from "../components/Footer";
 
-const Footer = () => (
+/*const Footer = () => (
   <footer className="bg-gray-800 text-white p-4 text-center mt-6">
     <p>© {new Date().getFullYear()} Plant Paradise. All rights reserved.</p>
   </footer>
-);
+);*/
 
 const UserLayout = () => {
   return (

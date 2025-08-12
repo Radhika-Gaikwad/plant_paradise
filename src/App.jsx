@@ -10,18 +10,18 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* User side routes */}
+        {/* User side routes with layout */}
         <Route path="/*" element={<UserRoutes />} />
 
         {/* Admin side routes */}
         <Route path="/admin/*" element={<AdminRoutes />} />
 
-        {/* Common routes for both */}
-        <Route path="/*" element={<CommonRoutes />} />
+        {/* Auth & Common routes WITHOUT layout */}
+        <Route path="/login" element={<CommonRoutes />} />
+        <Route path="/signup" element={<CommonRoutes />} />
       </Routes>
     </Router>
   );
 }
 
 export default App;
-

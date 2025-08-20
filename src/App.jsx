@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AdminRoutes from "./routes/AdminRoutes";
 import UserRoutes from "./routes/UserRoutes";
 import CommonRoutes from "./routes/CommonRoutes";
-
+import { ToastContainer } from "react-toastify";
 import './App.css';
 
 function App() {
@@ -20,6 +20,7 @@ function App() {
         <Route path="/login" element={<CommonRoutes />} />
         <Route path="/signup" element={<CommonRoutes />} />
       </Routes>
+         <ToastContainer position="top-right" autoClose={3000} />
     </Router>
   );
 }

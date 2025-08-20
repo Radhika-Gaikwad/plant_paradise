@@ -36,16 +36,22 @@ const SignUpForm = () => {
   return (
     <div className="min-h-screen flex w-full justify-between">
       {/* Left side image */}
-      <div className="hidden md:block w-[47%]">
-        <img src={login} alt="Login Visual" className="w-full h-full object-cover" />
-      </div>
+     {/* Left side image */}
+<div className="hidden md:block w-[45%]">
+  <img
+    src={login}
+    alt="Login Visual"
+    className="w-full object-fill h-[111vh]"
+  />
+</div>
+
       {/* Logo */}
       <div className="absolute top-3 right-4 flex items-center space-x-2">
         <GiPlantRoots className="text-green-900 lg:text-5xl sm:text-5xl text-4xl drop-shadow-md" />
         <span className="font-bold text-green-900 text-lg">Plant Paradise</span>
       </div>
       {/* Signup Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-6">
+      <div className="mt-7  w-full md:w-1/2 flex items-center justify-center p-6">
         <div className="w-full max-w-md mx-auto space-y-6">
           <div>
             <h2 className="md:text-3xl text-xl font-bold tracking-wide text-gray-900 font-serif">

@@ -6,25 +6,53 @@ import { loginUser } from "./authSlice";
 import { GiPlantRoots } from "react-icons/gi";
 import login from "../../assets/login1.jpg";
 import { FcGoogle } from "react-icons/fc";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { showToast } from "../../utils/showToast";
 
 const LoginForm = () => {
   const [email, setEmail] = useState(""); 
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading } = useSelector((state) => state.auth);
 
+  // ✅ Regex patterns
+  const emailRegex = /^\S+@\S+\.\S+$/;
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/; 
+  // at least 8 chars, 1 letter & 1 number
+
+  const validateField = (name, value) => {
+    let error = "";
+
+    if (name === "email") {
+      if (!value.trim()) error = "Email is required";
+      else if (!emailRegex.test(value)) error = "Invalid email format";
+    }
+
+    if (name === "password") {
+      if (!value.trim()) error = "Password is required";
+      else if (!passwordRegex.test(value))
+        error = "Min 8 chars, at least 1 letter & 1 number";
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: error }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Run full validation before submit
+    validateField("email", email);
+    validateField("password", password);
+
+    if (Object.values(errors).some((err) => err)) return;
 
     try {
       const result = await dispatch(loginUser({ email, password })).unwrap();
 
-      toast.success(result.message);
+      showToast(result.message, "success");
 
       if (result.data.role === 1) {
         navigate("/admin/dashboard");
@@ -32,7 +60,7 @@ const LoginForm = () => {
         navigate("/");
       }
     } catch (err) {
-      toast.error(err);
+      showToast(err, "error");
     }
   };
 
@@ -59,10 +87,9 @@ const LoginForm = () => {
           <h2 className="md:text-3xl text-xl font-bold tracking-wide text-gray-900 font-serif">
             Welcome Back..!
           </h2>
-     <p className="text-sm text-gray-800 font-light">
-  Access exclusive plant collections and gardening wisdom 🌼
-</p>
-
+          <p className="text-sm text-gray-800 font-light">
+            Access exclusive plant collections and gardening wisdom 🌼
+          </p>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* Email */}
@@ -74,9 +101,17 @@ const LoginForm = () => {
                 type="email"
                 placeholder="Enter email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  validateField("email", e.target.value);
+                }}
+                className={`w-full p-2 border rounded ${
+                  errors.email ? "border-red-500" : "border-gray-300"
+                }`}
               />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+              )}
             </div>
 
             {/* Password */}
@@ -89,16 +124,24 @@ const LoginForm = () => {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded pr-10"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    validateField("password", e.target.value);
+                  }}
+                  className={`w-full p-2 border rounded pr-10 ${
+                    errors.password ? "border-red-500" : "border-gray-300"
+                  }`}
                 />
                 <span
-                  className="absolute right-3 top-2.5 cursor-pointer text-gray-600"
+                  className="absolute right-3 top-3 cursor-pointer text-gray-600"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                 </span>
               </div>
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+              )}
               <div className="text-right mt-1">
                 <a href="#" className="text-sm text-[#6B72D6] hover:underline">
                   Forgot your Password?

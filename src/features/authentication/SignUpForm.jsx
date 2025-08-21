@@ -48,11 +48,11 @@ const SignUpForm = () => {
       <div className="w-full md:w-1/2 flex items-center justify-center p-6">
         <div className="w-full max-w-md mx-auto space-y-6">
           <div>
-            <h2 className="md:text-3xl text-xl font-bold tracking-wide text-gray-900 font-serif">
+            <h2 className="mt-10 md:text-3xl text-xl font-bold tracking-wide text-gray-900 font-serif">
               Create Your Account
             </h2>
             <p className="mt-1 text-sm text-gray-800 font-light">
-              Join us to explore plants and gardening tips 🌱
+              Sign up today and watch your garden dreams bloom 🌸🌱
             </p>
           </div>
 

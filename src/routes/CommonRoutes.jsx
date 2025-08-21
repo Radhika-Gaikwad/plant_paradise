@@ -30,6 +30,7 @@ const CommonRoutes = () => {
       <Route path="/login" element={<LoginForm />} />
       <Route path="/signup" element={<SignUpForm />} />
       <Route path="/add-address" element={<Address />} />
+      
     </Routes>
   );
  

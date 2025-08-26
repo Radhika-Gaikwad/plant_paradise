@@ -102,7 +102,7 @@ const handleChange = (field, value) => {
 
       {/* Logo */}
       <div className="absolute top-3 right-4 flex items-center space-x-2">
-        <GiPlantRoots className="text-green-900 lg:text-5xl sm:text-5xl text-4xl drop-shadow-md" />
+        <GiPlantRoots className="text-green-900  lg:text-5xl sm:text-4xl text-3xl drop-shadow-md" />
         <span className="font-bold text-green-900 text-lg">Plant Paradise</span>
       </div>
 

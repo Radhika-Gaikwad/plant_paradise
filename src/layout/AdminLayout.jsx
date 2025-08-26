@@ -11,7 +11,9 @@ const Sidebar = () => (
       <Link to="/admin/users" className="block hover:bg-gray-700 p-2 rounded">Users</Link>
       <Link to="/admin/categories" className="block hover:bg-gray-700 p-2 rounded">Categories</Link>
       <Link to="/admin/blogs" className="block hover:bg-gray-700 p-2 rounded">Blogs</Link>
+      <Link to="/admin/profile" className="block hover:bg-gray-700 p-2 rounded">Profile</Link>
     </nav>
+    <p>Logout</p>
   </aside>
 );
 

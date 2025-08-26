@@ -1,9 +1,9 @@
 // axiosAuthInstance.js
 import axios from 'axios';
-import { getCookie } from '../../cookie/Cookies';
+import { getCookie } from '../cookie/Cookies';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://54.234.201.60:5000/',
+  baseURL: 'https://plant-paradise-backend.onrender.com/api/v1/',
   headers: {
     'Content-Type': 'application/json',
   },

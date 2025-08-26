@@ -1,9 +1,13 @@
 import React from "react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import HeroSection from "../../components/HeroSection";
-import CategoryGrid from "../../components/CategoryGrid";
-import FeaturedProducts from "../../components/FeaturedProducts";
+import Hero from "../../components/Hero";
+import PlantCard from "../../components/ui/PlantCard";
+import snakePlant from "../../assets/snakeplant.jpg"; 
+import VideoPage from "../../components/ui/VideoPage";
+import Testimonials from "../../components/ui/Testimonials";
+
+
 
 const Home = () => {
   return (
@@ -18,9 +22,12 @@ const Home = () => {
 
       {/* Main content */}
       <main className="flex-grow">
-        <HeroSection />
-        <CategoryGrid />
-        <FeaturedProducts />
+       <Hero />
+       {/* Plant Card Section */}
+      <PlantCard/>
+      <VideoPage/>
+      <Testimonials/>
+      
       </main>
 
       {/* Footer at bottom */}

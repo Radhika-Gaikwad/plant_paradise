@@ -8,6 +8,8 @@ import AdminOrders from "../pages/admin/Orders";
 import Users from "../pages/admin/Users";
 import Categories from "../pages/admin/Categories";
 import Blogs from "../pages/admin/Blogs";
+import LogoutConfirm from "../pages/admin/LogoutConfirm";
+import Profile from "../features/profile/Profile";
 
 const AdminRoutes = () => {
   return (
@@ -19,7 +21,10 @@ const AdminRoutes = () => {
         <Route path="/users" element={<Users />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/blogs" element={<Blogs />} />
+        <Route path="profile" element={<Profile />} />
+
       </Route>
+      <Route path="logout-confirm" element={<LogoutConfirm />} />
     </Routes>
   );
 };

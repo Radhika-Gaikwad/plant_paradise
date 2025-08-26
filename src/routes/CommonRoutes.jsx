@@ -1,5 +1,3 @@
-/*import React from "react";
-import { useLocation } from "react-router-dom"; */
 import { Routes, Route } from "react-router-dom";
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";

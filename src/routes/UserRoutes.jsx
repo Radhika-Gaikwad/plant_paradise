@@ -9,6 +9,8 @@ import Cart from "../pages/user/Cart";
 import Products from "../pages/user/Products";
 import PlaceOrder from "../pages/user/PlaceOrder";
 import LoginForm from "../features/authentication/LoginForm";
+import Profile from "../features/profile/Profile";
+
 const UserRoutes = () => {
   return (
     <Routes>
@@ -20,6 +22,7 @@ const UserRoutes = () => {
         <Route path="/cart" element={<Cart />} />
         <Route path="/products" element={<Products />} />
         <Route path="/place-order" element={<PlaceOrder />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
     </Routes>
   );

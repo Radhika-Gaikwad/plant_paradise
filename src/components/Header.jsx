@@ -1,8 +1,10 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaHeart, FaShoppingCart, FaUser, FaBars, FaTimes } from "react-icons/fa";
+import { FaHeart, FaShoppingCart, FaBars, FaTimes, FaUserCircle } from "react-icons/fa";
 import { GiPlantRoots } from "react-icons/gi";
+import { FaUser, FaKey, FaSignOutAlt } from "react-icons/fa";
+import LogoutConfirm from "../features/authentication/LogoutConfirm";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -13,12 +15,24 @@ const navItems = [
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const navigate = useNavigate();
 
-  // Darker gradient colors
+  // Check login status
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) setUser(JSON.parse(storedUser));
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    navigate("/login");
+  };
+
   const gradientText = "bg-gradient-to-r from-green-900 via-green-700 to-green-900";
-  const gradientBtn =
-    "bg-gradient-to-r from-green-900 via-green-700 to-green-900 bg-[length:200%_200%] animate-gradientMove";
+  const gradientBtn = "bg-gradient-to-r from-green-900 via-green-700 to-green-900 bg-[length:200%_200%] animate-gradientMove";
 
   return (
     <motion.header
@@ -77,10 +91,54 @@ const Header = () => {
             </span>
           </Link>
 
-          {isLoggedIn ? (
-            <Link to="/profile" className={`${gradientText} text-transparent bg-clip-text`}>
-              <FaUser />
-            </Link>
+          {/* User Dropdown */}
+          {user ? (
+            <div
+              className="relative"
+              onMouseEnter={() => setDropdownOpen(true)}
+              onMouseLeave={() => setDropdownOpen(false)}
+            >
+              <button className="flex items-center space-x-2 focus:outline-none">
+                <FaUserCircle className="text-green-900 text-2xl" />
+                <span className="font-medium text-green-900">{user.name || "User"}</span>
+              </button>
+
+              {/* Dropdown Menu */}
+              <AnimatePresence>
+  {dropdownOpen && (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="absolute right-0 mt-2 w-44 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl border border-green-200 overflow-hidden z-50"
+    >
+       <Link
+            to="/profile"
+            className="flex items-center px-4 py-2 text-green-700 text-sm hover:text-black hover:bg-green-100 transition-all duration-300 space-x-2"
+          >
+            <FaUser className="text-green-700" />
+            <span>Profile</span>
+          </Link>
+      <Link
+        to="/reset-password"
+        className="flex items-center px-4 py-2 text-green-700 text-sm hover:text-black hover:bg-green-100 transition-all duration-300 space-x-2"
+      >
+        <FaKey className="text-green-700" />
+        <span>Reset Password</span>
+      </Link>
+      <button
+       onClick={() => navigate("/logout-confirm")}
+       className="flex items-center w-full text-left px-4 py-2 text-green-700 text-sm hover:text-black hover:bg-green-100 transition-all duration-300 space-x-2"
+      >
+      <FaSignOutAlt className="text-green-700" />
+      <span>Logout</span>
+      </button>
+
+    </motion.div>
+  )}
+</AnimatePresence>
+
+            </div>
           ) : (
             <Link
               to="/login"
@@ -130,4 +188,6 @@ const Header = () => {
 };
 
 export default Header;
+
+
 

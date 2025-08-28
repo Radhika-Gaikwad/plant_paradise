@@ -18,9 +18,12 @@
     "@tailwindcss/vite": "^4.1.10",
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.9.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.23.12",
     "js-cookie": "^3.0.5",
+    "lucide-react": "^0.542.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.62.0",
@@ -28,7 +31,9 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.2",
     "react-toastify": "^11.0.5",
+    "tailwind-variants": "^3.1.0",
     "tailwindcss": "^4.1.10",
+    "tailwindcss-animate": "^1.0.7",
     "yup": "^1.6.1"
   },
   "devDependencies": {

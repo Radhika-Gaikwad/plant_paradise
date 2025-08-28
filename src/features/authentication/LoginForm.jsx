@@ -9,7 +9,7 @@ import { FcGoogle } from "react-icons/fc";
 import { showToast } from "../../utils/showToast";
 
 const LoginForm = () => {
-  const [email, setEmail] = useState(""); 
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -20,7 +20,7 @@ const LoginForm = () => {
 
   // ✅ Regex patterns
   const emailRegex = /^\S+@\S+\.\S+$/;
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/; 
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
   // at least 8 chars, 1 letter & 1 number
 
   const validateField = (name, value) => {
@@ -41,37 +41,34 @@ const LoginForm = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // Run full validation before submit
-  validateField("email", email);
-  validateField("password", password);
+    validateField("email", email);
+    validateField("password", password);
+    if (Object.values(errors).some((err) => err)) return;
 
-  if (Object.values(errors).some((err) => err)) return;
+    try {
+      const result = await dispatch(loginUser({ email, password })).unwrap();
+      showToast("addresss added sucefully ", "success");
 
-  try {
-    const result = await dispatch(loginUser({ email, password })).unwrap();
+      const userData = {
+        name: result.data?.user?.name || "User",
+        email: result.data?.user?.email || email,
+        role: result.data?.user?.role || 0
+      };
+      localStorage.setItem("user", JSON.stringify(userData));
 
-    showToast(result.message, "success");
+      // ✅ Correct Redirect
+      if (result.data?.user?.role === 1) {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
 
-    // 👇 Save user in localStorage for Header.jsx
-    const userData = {
-      name: result.data?.name || "User", // fallback dummy name
-      email: result.data?.email || email,
-      role: result.data?.role || 0
-    };
-    localStorage.setItem("user", JSON.stringify(userData));
-
-    // Redirect after login
-    if (result.data?.role === 1) {
-      navigate("/admin/dashboard");
-    } else {
-      navigate("/");
+    } catch (err) {
+      showToast(err, "error");
     }
-  } catch (err) {
-    showToast(err, "error");
-  }
-};
+  };
 
 
   return (
@@ -115,9 +112,8 @@ const LoginForm = () => {
                   setEmail(e.target.value);
                   validateField("email", e.target.value);
                 }}
-                className={`w-full p-2 border rounded ${
-                  errors.email ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full p-2 border rounded ${errors.email ? "border-red-500" : "border-gray-300"
+                  }`}
               />
               {errors.email && (
                 <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -138,9 +134,8 @@ const LoginForm = () => {
                     setPassword(e.target.value);
                     validateField("password", e.target.value);
                   }}
-                  className={`w-full p-2 border rounded pr-10 ${
-                    errors.password ? "border-red-500" : "border-gray-300"
-                  }`}
+                  className={`w-full p-2 border rounded pr-10 ${errors.password ? "border-red-500" : "border-gray-300"
+                    }`}
                 />
                 <span
                   className="absolute right-3 top-3 cursor-pointer text-gray-600"

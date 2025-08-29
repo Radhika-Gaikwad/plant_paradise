@@ -10,7 +10,7 @@ const LogoutConfirm = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
+    <div className="flex items-center justify-center h-screen bg-transparent">
       <div className="bg-white p-6 rounded-xl shadow-md w-full max-w-md text-center">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           Are you sure you want to logout?

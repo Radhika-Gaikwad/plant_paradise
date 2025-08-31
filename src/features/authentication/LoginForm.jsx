@@ -50,7 +50,8 @@ const LoginForm = () => {
     try {
       const result = await dispatch(loginUser({ email, password })).unwrap();
       showToast("addresss added sucefully ", "success");
-
+const token = result?.data?.token || "v";  // replace with your actual token field
+    localStorage.setItem("token", token);
       const userData = {
         name: result.data?.user?.name || "User",
         email: result.data?.user?.email || email,

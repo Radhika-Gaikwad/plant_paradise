@@ -1,45 +1,23 @@
 import React, { useState } from "react";
-import { Upload, Loader2 } from "lucide-react"; // loader icon
-import { showToast } from "../../utils/showToast";
-import { addProduct } from "../../services/productApi";
+import { Upload, Loader2 } from "lucide-react";
+import { updateProduct } from "../../services/productApi";
 import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
-const ProductForm = ({ onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    productName: "",
-    category: "",
-    subCategory: "",
-    quantity: "",
-    stock: true,
-    subscription: false,
-    unit: "piece",
-    price: "",
-    discount: "",
-    imageUrl: [],
-    video: [],
-    description: "",
-  });
+import { showToast } from "../../utils/showToast";
 
+const EditProductForm = ({ product, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({ ...product });
   const [errors, setErrors] = useState({});
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Validation
   const validate = () => {
     let newErrors = {};
-    if (!formData.productName.trim())
-      newErrors.productName = "Product name is required";
-    if (!formData.price || formData.price <= 0)
-      newErrors.price = "Enter a valid price";
-    if (formData.discount && formData.discount >= formData.price)
-      newErrors.discount = "Discount must be less than price";
-    if (formData.quantity < 0) newErrors.quantity = "Quantity cannot be negative";
-    if (formData.imageUrl.length === 0)
-      newErrors.imageUrl = "Product image is required";
+    if (!formData.productName.trim()) newErrors.productName = "Product name is required";
+    if (!formData.price || formData.price <= 0) newErrors.price = "Enter a valid price";
     return newErrors;
   };
 
-  // ✅ Handle Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
@@ -50,31 +28,25 @@ const ProductForm = ({ onClose, onSubmit }) => {
 
     try {
       setLoading(true);
-      const response = await addProduct(formData);
-      showToast("✅ Product added successfully!", "success");
-      console.log("API Response:", response);
+      await updateProduct(product.productId, formData);
+      showToast("✅ Product updated successfully!", "success");
+      onSuccess(); // refresh list
       onClose();
     } catch (error) {
-      showToast(error.message || "❌ Failed to add product", "error");
+      showToast(error.message || "❌ Failed to update", "error");
     } finally {
       setLoading(false);
     }
   };
 
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
   };
 
   const handleFileUpload = async (e, type) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-
-    // Set loader based on type
     if (type === "image") setUploadingImage(true);
     if (type === "video") setUploadingVideo(true);
 
@@ -82,66 +54,43 @@ const ProductForm = ({ onClose, onSubmit }) => {
       const urls = [];
       for (const file of files) {
         if (type === "video" && file.size > 30 * 1024 * 1024) {
-          showToast("Video must be 30MB or less (~30s)", "error");
+          showToast("Video must be ≤30MB", "error");
           continue;
         }
         const url = await uploadToCloudinary(file, type);
         urls.push(url);
       }
-
       setFormData((prev) => ({
         ...prev,
-        [type === "image" ? "imageUrl" : "video"]: [
-          ...(prev[type === "image" ? "imageUrl" : "video"] || []),
-          ...urls,
-        ],
+        [type === "image" ? "imageUrl" : "video"]: [...prev[type === "image" ? "imageUrl" : "video"], ...urls],
       }));
-
-      if (urls.length > 0) {
-        showToast(
-          `${urls.length} ${type === "image" ? "image(s)" : "video(s)"} uploaded successfully ✅`,
-          "success"
-        );
-      }
-    } catch (error) {
-      showToast("Failed to upload file. Please try again.", "error");
+    } catch {
+      showToast("Upload failed", "error");
     } finally {
-      if (type === "image") setUploadingImage(false);
-      if (type === "video") setUploadingVideo(false);
+      setUploadingImage(false);
+      setUploadingVideo(false);
     }
   };
-
-
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-full md:h-auto max-h-screen overflow-y-auto p-8">
-        {/* Heading */}
-        <h2 className="text-3xl font-extrabold text-green-700 mb-8 text-center tracking-wide">
-          🌱 Add New Product
-        </h2>
+        <h2 className="text-3xl font-extrabold text-green-700 mb-8 text-center">✏️ Edit Product</h2>
 
-        <form
-          onSubmit={handleSubmit}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {/* Product Name */}
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Example: Product Name */}
           <div className="flex flex-col">
-            <label className="mb-2 font-medium text-gray-700">Product Name</label>
+            <label className="mb-2">Product Name</label>
             <input
               type="text"
               name="productName"
-              placeholder="Enter product name"
               value={formData.productName}
               onChange={handleChange}
-              className="w-full border border-green-300 rounded-xl p-3 focus:ring-2 focus:ring-green-500 outline-none shadow-sm"
+              className="border p-3 rounded-xl"
             />
-            {errors.productName && (
-              <p className="text-red-500 text-sm mt-1">{errors.productName}</p>
-            )}
+            {errors.productName && <p className="text-red-500 text-sm">{errors.productName}</p>}
           </div>
-
-          {/* Category */}
+ {/* Category */}
           <div className="flex flex-col">
             <label className="mb-2 font-medium text-gray-700">Category</label>
             <select
@@ -339,34 +288,19 @@ const ProductForm = ({ onClose, onSubmit }) => {
             />
           </div>
 
+
           {/* Buttons */}
           <div className="md:col-span-2 lg:col-span-3 flex justify-end space-x-4 pt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 border border-green-600 text-green-700 rounded-xl hover:bg-green-50 transition shadow-sm"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition shadow-md flex items-center gap-2"
-            >
+            <button type="button" onClick={onClose} className="px-6 py-2 border rounded-xl">Cancel</button>
+            <button type="submit" disabled={loading} className="px-6 py-2 bg-green-600 text-white rounded-xl flex items-center gap-2">
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              Save Product
+              Save Changes
             </button>
           </div>
         </form>
-
       </div>
-
-
-
-
     </div>
   );
 };
 
-export default ProductForm;
-
+export default EditProductForm;

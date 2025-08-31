@@ -1,6 +1,5 @@
 @import "tailwindcss";
-<<<<<<< HEAD
-=======
+
 
 @keyframes fadeInUp {
   from {
@@ -12,4 +11,3 @@
     transform: translate3d(0, 0, 0);
   }
 }
->>>>>>> 44289a5600fdad2764fd77b755c8b989849b2ebf

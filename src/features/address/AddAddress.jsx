@@ -13,9 +13,9 @@ const AddAddress = () => {
     house: "",
     street: "",
     city: "",
+    state: "",
     pincode: "",
     type: "Home",
-    alternate: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -37,6 +37,7 @@ const AddAddress = () => {
     if (!formData.house) newErrors.house = "House number is required";
     if (!formData.street) newErrors.street = "Street is required";
     if (!formData.city) newErrors.city = "City is required";
+    if (!formData.state) newErrors.state = "State is required";
     if (!formData.pincode) newErrors.pincode = "Pincode is required";
     return newErrors;
   };
@@ -52,23 +53,24 @@ const AddAddress = () => {
         savedAddresses.push(formData);
       }
       localStorage.setItem("addresses", JSON.stringify(savedAddresses));
-      navigate("/profile"); // redirect back to profile
+      navigate("/profile");
     } else {
       setErrors(newErrors);
     }
   };
 
   const handleCancel = () => {
-    navigate("/profile"); // go back without saving
+    navigate("/profile");
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-green-500 p-6">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-lg">
+    <div className="min-h-screen flex justify-center items-center bg-transparent-100 p-6">
+      <div className="bg-green-50 rounded-2xl shadow-lg p-8 w-full max-w-5xl">
         <h2 className="text-2xl font-bold text-center text-green-600 mb-6">
           {editData ? "Edit Address" : "Add New Address"}
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Full Name */}
           <div>
             <label className="block text-sm font-medium">Full Name</label>
@@ -134,6 +136,19 @@ const AddAddress = () => {
             {errors.city && <p className="text-red-500 text-sm">{errors.city}</p>}
           </div>
 
+          {/* State */}
+          <div>
+            <label className="block text-sm font-medium">State</label>
+            <input
+              type="text"
+              name="state"
+              value={formData.state}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-lg"
+            />
+            {errors.state && <p className="text-red-500 text-sm">{errors.state}</p>}
+          </div>
+
           {/* Pincode */}
           <div>
             <label className="block text-sm font-medium">Pincode</label>
@@ -163,17 +178,17 @@ const AddAddress = () => {
           </div>
 
           {/* Buttons */}
-          <div className="flex justify-between gap-2 mt-4">
+          <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center gap-4 mt-4">
             <button
               type="button"
               onClick={handleCancel}
-              className="w-1/2 bg-gray-400 text-white py-2 rounded-lg hover:bg-gray-500"
+              className="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="w-1/2 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               Save
             </button>

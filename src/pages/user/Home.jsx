@@ -1,42 +1,65 @@
-import React from "react";
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
+// src/pages/Home.jsx
+import React, { useEffect, useRef } from "react";
 import Hero from "../../components/Hero";
 import PlantCard from "../../components/ui/PlantCard";
-import snakePlant from "../../assets/snakeplant.jpg"; 
 import VideoPage from "../../components/ui/VideoPage";
 import Testimonials from "../../components/ui/Testimonials";
-
-
+import { plants } from "../../data/plants";
 
 const Home = () => {
+  const scrollRef = useRef(null);
+
+  // Auto-scroll every 2s
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    const scroll = () => {
+      if (
+        scrollContainer.scrollLeft + scrollContainer.clientWidth >=
+        scrollContainer.scrollWidth
+      ) {
+        scrollContainer.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        scrollContainer.scrollBy({ left: 300, behavior: "smooth" });
+      }
+    };
+
+    const interval = setInterval(scroll, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="p-6 text-center">
-      <h1 className="text-3xl font-bold">Welcome to Plant Paradise 🌱</h1>
-      <p className="mt-4 text-gray-600">
-        Your one-stop shop for beautiful indoor and outdoor plants.
-      </p>
-      <div className="flex flex-col min-h-screen">
-      {/* Navbar at top */}
-      <header />
+    <div className="flex flex-col min-h-screen">
 
-      {/* Main content */}
+      {/* ✅ Main content */}
       <main className="flex-grow">
-       <Hero />
-       {/* Plant Card Section */}
-      <PlantCard/>
-      <VideoPage/>
-      <Testimonials/>
-      
-      </main>
+        <Hero />
 
-      {/* Footer at bottom */}
-      
+        {/* 🌱 Featured Plants Section */}
+        <section className="p-6">
+          <h1 className="text-2xl font-bold text-center mb-6">
+            🌱 Featured Plants
+          </h1>
+
+          <div
+            ref={scrollRef}
+            className="flex gap-6 overflow-x-hidden scroll-smooth px-4"
+          >
+            {[...plants, ...plants].map((plant, index) => (
+              <PlantCard key={index} plant={plant} />
+            ))}
+          </div>
+        </section>
+
+        {/* 🎥 Video Section */}
+        <VideoPage />
+
+        {/* ⭐ Testimonials Section */}
+        <Testimonials />
+      </main>
     </div>
-    </div>
-    
   );
 };
 
 export default Home;
-

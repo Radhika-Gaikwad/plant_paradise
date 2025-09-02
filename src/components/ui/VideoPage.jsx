@@ -24,7 +24,7 @@ const VideoPage = () => {
           loop
           className="w-full h-full object-cover"
         />
-        <div className="absolute top-0 left-0 w-full h-full bg-black/20"></div>
+        
       </div>
     </div>
   );

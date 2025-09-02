@@ -1,3 +1,4 @@
+// src/pages/AdminProducts.jsx
 import React, { useState } from "react";
 import ProductTable from "../../components/admin/ProductTable";
 import ProductForm from "../../components/admin/ProductForm";
@@ -6,8 +7,8 @@ const AdminProducts = () => {
   const [showForm, setShowForm] = useState(false);
 
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
-      {/* Page Header */}
+    <div className="min-h-screen bg-gray-50">
+      {/* ---------- Header ---------- */}
       <div className="bg-white shadow-md rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight">
@@ -26,12 +27,13 @@ const AdminProducts = () => {
         </button>
       </div>
 
-      {/* Products Table Section */}
-      <div className="bg-white shadow-lg rounded-2xl p-6">
+      {/* ---------- Table Section ---------- */}
+      <div className="bg-white shadow-lg rounded-2xl">
+        {/* ✅ Don’t wrap ProductTable in another max-h container */}
         <ProductTable />
       </div>
 
-      {/* Product Form Modal */}
+      {/* ---------- Modal/Form ---------- */}
       {showForm && (
         <div className="animate-fadeIn">
           <ProductForm onClose={() => setShowForm(false)} />
@@ -42,3 +44,5 @@ const AdminProducts = () => {
 };
 
 export default AdminProducts;
+
+

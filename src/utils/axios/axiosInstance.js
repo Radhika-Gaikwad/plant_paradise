@@ -19,7 +19,7 @@ export const updateAuthHeader = (token) => {
 };
 
 // ✅ Check for token in cookies when instance is created
- const token = localStorage.getItem("token"); 
+const token = localStorage.getItem("token");
 if (token) {
   updateAuthHeader(token);
 }

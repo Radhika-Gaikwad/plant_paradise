@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+//import { addAddress, updateAddress } from "../../services/addressApi";
 
 const AddAddress = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const editData = location.state?.editData;
-  const editIndex = location.state?.index;
+  const userId = localStorage.getItem("userId");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -42,18 +43,20 @@ const AddAddress = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
     if (Object.keys(newErrors).length === 0) {
-      const savedAddresses = JSON.parse(localStorage.getItem("addresses")) || [];
-      if (editIndex !== undefined) {
-        savedAddresses[editIndex] = formData;
-      } else {
-        savedAddresses.push(formData);
+      try {
+        if (editData?._id) {
+          await updateAddress(editData._id, formData);
+        } else {
+          await addAddress(userId, formData);
+        }
+        navigate("/profile");
+      } catch (err) {
+        console.error("Error saving address:", err);
       }
-      localStorage.setItem("addresses", JSON.stringify(savedAddresses));
-      navigate("/profile");
     } else {
       setErrors(newErrors);
     }
@@ -70,112 +73,12 @@ const AddAddress = () => {
           {editData ? "Edit Address" : "Add New Address"}
         </h2>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Full Name */}
-          <div>
-            <label className="block text-sm font-medium">Full Name</label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label className="block text-sm font-medium">Phone</label>
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
-          </div>
-
-          {/* House */}
-          <div>
-            <label className="block text-sm font-medium">House</label>
-            <input
-              type="text"
-              name="house"
-              value={formData.house}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.house && <p className="text-red-500 text-sm">{errors.house}</p>}
-          </div>
-
-          {/* Street */}
-          <div>
-            <label className="block text-sm font-medium">Street</label>
-            <input
-              type="text"
-              name="street"
-              value={formData.street}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.street && <p className="text-red-500 text-sm">{errors.street}</p>}
-          </div>
-
-          {/* City */}
-          <div>
-            <label className="block text-sm font-medium">City</label>
-            <input
-              type="text"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.city && <p className="text-red-500 text-sm">{errors.city}</p>}
-          </div>
-
-          {/* State */}
-          <div>
-            <label className="block text-sm font-medium">State</label>
-            <input
-              type="text"
-              name="state"
-              value={formData.state}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.state && <p className="text-red-500 text-sm">{errors.state}</p>}
-          </div>
-
-          {/* Pincode */}
-          <div>
-            <label className="block text-sm font-medium">Pincode</label>
-            <input
-              type="text"
-              name="pincode"
-              value={formData.pincode}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.pincode && <p className="text-red-500 text-sm">{errors.pincode}</p>}
-          </div>
-
-          {/* Type */}
-          <div>
-            <label className="block text-sm font-medium">Type</label>
-            <select
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            >
-              <option>Home</option>
-              <option>Office</option>
-              <option>Other</option>
-            </select>
-          </div>
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          {/* form inputs same as before */}
+          {/* ... keep your inputs and validation messages ... */}
 
           {/* Buttons */}
           <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center gap-4 mt-4">

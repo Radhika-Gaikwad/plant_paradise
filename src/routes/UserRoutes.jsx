@@ -22,7 +22,10 @@ const UserRoutes = () => {
         <Route path="/cart" element={<Cart />} />
         <Route path="/products" element={<Products />} />
         <Route path="/place-order" element={<PlaceOrder />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route 
+          path="/profile" 
+          element={<Profile userId={localStorage.getItem("userId")} />} 
+        />
       </Route>
     </Routes>
   );

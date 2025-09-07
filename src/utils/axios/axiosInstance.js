@@ -18,11 +18,13 @@ export const updateAuthHeader = (token) => {
   }
 };
 
-// ✅ Check for token in cookies when instance is created
- const token = localStorage.getItem("token"); 
+/*// ✅ Check for token in cookies when instance is created
+const token = localStorage.getItem("token");
 if (token) {
   updateAuthHeader(token);
-}
+}*/
+// Add token if exists
+const token = localStorage.getItem("token");
+if (token) axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
 export default axiosInstance;
-

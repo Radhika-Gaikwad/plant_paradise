@@ -8,6 +8,7 @@ import EditProductForm from "./EditProductForm";
 import { deleteProduct } from "../../services/productApi";
 import { showToast } from "../../utils/showToast";
 import { useNavigate } from "react-router-dom";
+import { GiPlantRoots } from "react-icons/gi";
 
 import {
   useReactTable,
@@ -191,7 +192,16 @@ const ProductTable = () => {
     },
   });
 
-  if (loading) return <p className="p-4">Loading products...</p>;
+  if (loading) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen bg-white">
+          <GiPlantRoots className="text-green-600 text-6xl animate-bounce mb-4" />
+          <div className="w-32 h-4 bg-gray-200 animate-pulse rounded mb-4"></div>
+          <p className="text-lg font-medium text-gray-700">Loading Products…</p>
+        </div>
+      );
+    }
+  
 
   return (
     <div className=" bg-gray-50 rounded-xl shadow-xl flex flex-col">

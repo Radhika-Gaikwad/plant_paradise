@@ -41,35 +41,57 @@ const LoginForm = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    validateField("email", email);
-    validateField("password", password);
-    if (Object.values(errors).some((err) => err)) return;
+  const emailError = !email.trim()
+    ? "Email is required"
+    : !emailRegex.test(email)
+    ? "Invalid email format"
+    : "";
 
-    try {
-      const result = await dispatch(loginUser({ email, password })).unwrap();
-      showToast("addresss added sucefully ", "success");
-const token = result?.data?.token || "v";  // replace with your actual token field
-    localStorage.setItem("token", token);
-      const userData = {
-        name: result.data?.user?.name || "User",
-        email: result.data?.user?.email || email,
-        role: result.data?.user?.role || 0
-      };
-      localStorage.setItem("user", JSON.stringify(userData));
+  const passwordError = !password.trim()
+    ? "Password is required"
+    : !passwordRegex.test(password)
+    ? "Min 8 chars, at least 1 letter & 1 number"
+    : "";
 
-      // ✅ Correct Redirect
-      if (result.data?.user?.role === 1) {
-        navigate("/admin/dashboard");
-      } else {
-        navigate("/");
-      }
+  setErrors({ email: emailError, password: passwordError });
 
-    } catch (err) {
-      showToast(err, "error");
+  if (emailError || passwordError) return;
+
+  try {
+    const result = await dispatch(loginUser({ email, password })).unwrap();
+
+    showToast("Logged in successfully", "success");
+
+    // ✅ Save token
+    localStorage.setItem("token", result?.data?.token);
+
+    // ✅ Save user
+    const user = result?.data?.user;
+    if (user) {
+      localStorage.setItem("userId", user._id); // 🔹 Corrected
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          userId: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        })
+      );
     }
-  };
+
+    // ✅ Navigate based on role
+    if (user?.role === 1) {
+      navigate("/admin/dashboard");
+    } else {
+      navigate("/");
+    }
+  } catch (err) {
+    showToast(err?.message || "Login failed", "error");
+  }
+};
 
 
   return (

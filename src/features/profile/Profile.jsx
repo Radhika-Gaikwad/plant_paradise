@@ -1,45 +1,62 @@
 import React, { useState, useEffect } from "react";
 import { GiPlantRoots } from "react-icons/gi";
-import Address from "../address/Address"; // ✅ Import Address component
+import Address from "../address/Address";
+import { getProfile, updateProfile } from "../../services/profileApi"; // ✅ import API
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
 
-  // Profile Info
-  const [profile] = useState({
-    username: "Pallavi",
-    email: "pallavi@example.com",
-  });
+  const userId = localStorage.getItem("userId"); // store this at login/signup
+  const [profile, setProfile] = useState(null);
+  const [personalInfo, setPersonalInfo] = useState({});
+  const [tempInfo, setTempInfo] = useState({});
 
-  // Personal Info (editable)
-  const [personalInfo, setPersonalInfo] = useState({
-    name: "Pallavi Hon",
-    email: "pallavi@example.com",
-    mobile: "9876543210",
-    gender: "Female",
-  });
-
-  const [tempInfo, setTempInfo] = useState({ ...personalInfo });
-
+  // ✅ Fetch profile from API
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchProfile = async () => {
+      try {
+        const data = await getProfile(userId);
+        setProfile({
+          username: data.username,
+          email: data.email,
+        });
+        setPersonalInfo({
+          name: data.name,
+          email: data.email,
+          mobile: data.mobile,
+          gender: data.gender,
+        });
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [userId]);
 
   const handleEdit = () => {
-    setTempInfo({ ...personalInfo }); // Copy current data
+    setTempInfo({ ...personalInfo });
     setEditing(true);
   };
 
-  const handleSave = () => {
-    setPersonalInfo(tempInfo); // Save changes
-    setEditing(false);
+  const handleSave = async () => {
+    try {
+      const updated = await updateProfile(userId, tempInfo);
+      setPersonalInfo({
+        name: updated.name,
+        email: updated.email,
+        mobile: updated.mobile,
+        gender: updated.gender,
+      });
+      setEditing(false);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+    }
   };
 
-  const handleCancel = () => {
-    setEditing(false); // Discard changes
-  };
+  const handleCancel = () => setEditing(false);
 
   if (loading) {
     return (
@@ -57,13 +74,13 @@ const Profile = () => {
       <div className="w-full bg-gradient-to-r from-green-200 to-white shadow-md rounded-lg p-4 mb-6">
         <div className="flex items-center">
           <div className="w-16 h-16 rounded-full bg-green-600 flex items-center justify-center text-white text-2xl font-bold">
-            {profile.username.charAt(0)}
+            {profile?.username?.charAt(0)}
           </div>
           <div className="ml-4">
             <h2 className="text-xl font-semibold text-green-800">
-              {profile.username}
+              {profile?.username}
             </h2>
-            <p className="text-gray-700">{profile.email}</p>
+            <p className="text-gray-700">{profile?.email}</p>
           </div>
         </div>
       </div>
@@ -77,7 +94,7 @@ const Profile = () => {
           {!editing ? (
             <button
               onClick={handleEdit}
-              className="text-green-700 font-medium hover:underline"
+              className="px-4 py-1 border border-green-600 text-green-700 rounded-lg hover:bg-green-600 hover:text-white transition"
             >
               Edit
             </button>
@@ -85,13 +102,13 @@ const Profile = () => {
             <div className="space-x-2">
               <button
                 onClick={handleSave}
-                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                className="px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
               >
                 Save
               </button>
               <button
                 onClick={handleCancel}
-                className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500"
+                className="px-4 py-1 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition"
               >
                 Cancel
               </button>
@@ -107,7 +124,7 @@ const Profile = () => {
             {editing ? (
               <input
                 type="text"
-                value={tempInfo.name}
+                value={tempInfo.name || ""}
                 onChange={(e) =>
                   setTempInfo({ ...tempInfo, name: e.target.value })
                 }
@@ -124,7 +141,7 @@ const Profile = () => {
             {editing ? (
               <input
                 type="text"
-                value={tempInfo.mobile}
+                value={tempInfo.mobile || ""}
                 onChange={(e) =>
                   setTempInfo({ ...tempInfo, mobile: e.target.value })
                 }
@@ -141,7 +158,7 @@ const Profile = () => {
             {editing ? (
               <input
                 type="email"
-                value={tempInfo.email}
+                value={tempInfo.email || ""}
                 onChange={(e) =>
                   setTempInfo({ ...tempInfo, email: e.target.value })
                 }
@@ -157,7 +174,7 @@ const Profile = () => {
             <label className="block text-sm text-gray-700">Gender</label>
             {editing ? (
               <select
-                value={tempInfo.gender}
+                value={tempInfo.gender || ""}
                 onChange={(e) =>
                   setTempInfo({ ...tempInfo, gender: e.target.value })
                 }
@@ -174,7 +191,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* ✅ Imported Address Component */}
+      {/* ✅ Address Section */}
       <Address />
     </div>
   );

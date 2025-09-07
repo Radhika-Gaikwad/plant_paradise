@@ -20,3 +20,11 @@ if (response.data?.data?.token) {
     );
   }
 };
+export const signUp = async (userData) => {
+  try {
+    const response = await axiosInstance.post("auth/register", userData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || "Something went wrong, please try again.";
+  }
+};

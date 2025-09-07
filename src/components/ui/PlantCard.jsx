@@ -38,6 +38,7 @@ const PlantCard = ({ plant }) => {
           alt={plant?.productName || "Plant"}
           className="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105"
         />
+        
       </div>
 
       {/* Content */}

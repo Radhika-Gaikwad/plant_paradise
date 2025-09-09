@@ -61,3 +61,22 @@ export const getProductById = async (productId) => {
     throw error.response?.data || { message: "Something went wrong" };
   }
 };
+
+export const getProductsByCategory = async (categoryId) => {
+  try {
+    const response = await axiosInstance.get(`product/byCategory/${categoryId}`);
+    return response.data.data.items; // backend returns { data: { items: [...] } }
+  } catch (error) {
+    throw error.response?.data || { message: "Something went wrong" };
+  }
+};
+
+// Get products by subcategory
+export const getProductsBySubCategory = async (subCategoryId) => {
+  try {
+    const response = await axiosInstance.get(`product/bySubCategory/${subCategoryId}`);
+    return response.data.data.items;
+  } catch (error) {
+    throw error.response?.data || { message: "Something went wrong" };
+  }
+};

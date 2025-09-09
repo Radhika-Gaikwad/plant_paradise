@@ -60,8 +60,8 @@ const ProductTable = () => {
         accessorFn: (_row, i) => i + 1,
       },
       { header: "Product Name", accessorKey: "productName" },
-      { header: "Category", accessorKey: "category" },
-      { header: "Sub Category", accessorKey: "subCategory" },
+      { header: "Category", accessorKey: "categoryName" },
+      { header: "Sub Category", accessorKey: "subCategoryName" },
       { header: "Quantity", accessorKey: "quantity" },
       {
         header: "Stock",

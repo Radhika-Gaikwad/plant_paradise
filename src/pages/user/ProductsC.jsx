@@ -1,12 +1,16 @@
-// src/pages/ProductsC.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getAllSubCategories, getAllCategories } from "../../services/categoryService";
-import { getAllProducts } from "../../services/productApi";
 import PlantCard from "../../components/ui/PlantCard";
+import {
+  getAllProducts,
+  getProductsByCategory,
+  getProductsBySubCategory,
+} from "../../services/productApi";
 
 const ProductsC = () => {
   const { categoryId } = useParams();
+  console.log("ProductsC categoryId:", categoryId)
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
@@ -16,51 +20,94 @@ const ProductsC = () => {
   const [products, setProducts] = useState([]);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
 
-  // Load categories + products by categoryId
+  // Load categories + subcategories + products for the category
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
-      const cats = await getAllCategories();
-      setCategories(cats);
+      try {
+        const cats = await getAllCategories();
+        if (cancelled) return;
+        setCategories(cats);
 
-      const allProds = await getAllProducts();
+        const allSubs = await getAllSubCategories();
+        if (cancelled) return;
 
-      if (categoryId === "all") {
-        setSelectedCategory({ categoryId: "all", categoryName: "All Plants" });
-        setProducts(allProds);
+        // If route param is missing or 'all', show all products
+        if (!categoryId || categoryId === "all") {
+          setSelectedCategory({ categoryId: "all", categoryName: "All Plants" });
+          const allProds = await getAllProducts();
+          if (cancelled) return;
+          setProducts(allProds || []);
+          setSubCategories([]);
+        } else {
+          // set selected category (fallback if not found)
+          const cat = cats.find((c) => c.categoryId === categoryId) || {
+            categoryId,
+            categoryName: "Category",
+          };
+          setSelectedCategory(cat);
+
+          // filter subs for this category
+          const filteredSubs = allSubs.filter((s) => s.categoryId === categoryId);
+          setSubCategories(filteredSubs);
+
+          // fetch products by category via API (important)
+          const prods = await getProductsByCategory(categoryId);
+          if (cancelled) return;
+          setProducts(prods || []);
+        }
+
+        // reset subcategory selection whenever the top-level category changes
+        setSelectedSubCategory(null);
+      } catch (err) {
+        console.error("ProductsC fetch error:", err);
+        setProducts([]);
         setSubCategories([]);
-      } else {
-        const cat = cats.find((c) => c.categoryId === categoryId);
-        setSelectedCategory(cat);
-
-        const subs = await getAllSubCategories();
-        const filteredSubs = subs.filter((s) => s.categoryId === categoryId);
-        setSubCategories(filteredSubs);
-
-        // ✅ Correct field: product.category
-        const filteredProds = allProds.filter((p) => p.category === categoryId);
-        setProducts(filteredProds);
       }
-
-      // Reset subcategory selection when category changes
-      setSelectedSubCategory(null);
     };
+
     fetchData();
+    return () => {
+      cancelled = true;
+    };
   }, [categoryId]);
 
-  // Filter products by subcategory
+  // When a subcategory is selected (or cleared), fetch appropriate products
   useEffect(() => {
-    const fetchProds = async () => {
-      if (!selectedSubCategory) return;
-      const allProds = await getAllProducts();
+    let cancelled = false;
 
-      // ✅ Correct field: product.subCategory
-      const filtered = allProds.filter(
-        (p) => p.subCategory === selectedSubCategory.subCategoryId
-      );
-      setProducts(filtered);
+    const fetchForSub = async () => {
+      try {
+        // If no selected subcategory -> reload category products (or all)
+        if (!selectedSubCategory) {
+          if (!categoryId || categoryId === "all") {
+            const allProds = await getAllProducts();
+            if (cancelled) return;
+            setProducts(allProds || []);
+          } else {
+            const prods = await getProductsByCategory(categoryId);
+            if (cancelled) return;
+            setProducts(prods || []);
+          }
+          return;
+        }
+
+        // toggle: use subCategoryId if available otherwise _id
+        const subId = selectedSubCategory.subCategoryId || selectedSubCategory._id;
+        const prods = await getProductsBySubCategory(subId);
+        if (cancelled) return;
+        setProducts(prods || []);
+      } catch (err) {
+        console.error("Fetch by subcategory error:", err);
+        setProducts([]);
+      }
     };
-    fetchProds();
-  }, [selectedSubCategory]);
+
+    fetchForSub();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSubCategory, categoryId]);
 
   return (
     <div className="p-6">
@@ -111,7 +158,9 @@ const ProductsC = () => {
             <div
               key={sub._id}
               className="flex flex-col items-center cursor-pointer"
-              onClick={() => setSelectedSubCategory(sub)}
+              onClick={() =>
+                setSelectedSubCategory((prev) => (prev?._id === sub._id ? null : sub))
+              } // toggle selection
             >
               <img
                 src={sub.imageUrl}
@@ -146,12 +195,10 @@ const ProductsC = () => {
       </h3>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.length > 0 ? (
+        {products && products.length > 0 ? (
           products.map((plant) => <PlantCard key={plant._id} plant={plant} />)
         ) : (
-          <p className="col-span-full text-center text-gray-500">
-            No products found 🌱
-          </p>
+          <p className="col-span-full text-center text-gray-500">No products found 🌱</p>
         )}
       </div>
     </div>

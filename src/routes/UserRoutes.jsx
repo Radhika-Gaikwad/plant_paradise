@@ -11,6 +11,7 @@ import PlaceOrder from "../pages/user/PlaceOrder";
 import LoginForm from "../features/authentication/LoginForm";
 import Profile from "../features/profile/Profile";
 import ProductsC from "../pages/user/ProductsC";
+import  UserProductDetails from "../components/user/UserProductDetails";
 const UserRoutes = () => {
   return (
     <Routes>
@@ -24,6 +25,7 @@ const UserRoutes = () => {
         <Route path="/place-order" element={<PlaceOrder />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/products/:categoryId" element={<ProductsC />} />
+        <Route path="/product/:productId" element={<UserProductDetails />} />
       </Route>
     </Routes>
   );

@@ -48,8 +48,20 @@ const signupSlice = createSlice({
 export const { resetSignup } = signupSlice.actions;
 export default signupSlice.reducer;*/
 // src/features/authentication/signupSlice.js
-import { createSlice } from "@reduxjs/toolkit";
-import { signUpUser } from "./authSlice"; // ✅ reuse the thunk
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { signupService } from "./signupService";
+
+// Async thunk for signup
+export const signUpUser = createAsyncThunk(
+  "signup/signUpUser",
+  async (userData, thunkAPI) => {
+    try {
+      return await signupService(userData);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
 
 const signupSlice = createSlice({
   name: "signup",

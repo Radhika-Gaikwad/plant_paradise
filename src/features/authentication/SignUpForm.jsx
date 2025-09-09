@@ -6,10 +6,11 @@ import { Link } from "react-router-dom";
 import login from "../../assets/login1.jpg";
 import { GiPlantRoots } from "react-icons/gi";
 import { useDispatch, useSelector } from "react-redux";
-//import { signupUser, resetSignup } from "./signupSlice";
+import { signUpUser, resetSignup } from "./signupSlice";
 import { validateSignup } from "./signupValidation";
 import { showToast } from "../../utils/showToast";
 import { useNavigate } from "react-router-dom";
+
 const SignUpForm = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -58,7 +59,7 @@ useEffect(() => {
         password,
         confirmPassword,
       };
-      dispatch(signupUser(signupData));
+      dispatch(signUpUser(signupData));
     }
   };
 

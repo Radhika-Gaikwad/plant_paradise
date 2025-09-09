@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-//import { addAddress, updateAddress } from "../../services/addressApi";
+import { addAddress, updateAddress } from "../../services/profileApi";
+import { toast } from "react-toastify";
+
 
 const AddAddress = () => {
   const navigate = useNavigate();
@@ -9,13 +11,15 @@ const AddAddress = () => {
   const userId = localStorage.getItem("userId");
 
   const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    house: "",
-    street: "",
+    name: "",
+    phoneNo: "",
+    alterPhoneNo: "",
+    houseNo: "",
+    streetName: "",
     city: "",
     state: "",
-    pincode: "",
+    zipcode: "",
+    district: "",
     type: "Home",
   });
 
@@ -23,52 +27,85 @@ const AddAddress = () => {
 
   useEffect(() => {
     if (editData) {
-      setFormData(editData);
+      setFormData({
+        ...editData,
+        type: editData.addressType || "home",
+        zipcode: editData.pincode || "",
+        district: editData.district || "",
+      });
     }
   }, [editData]);
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   const validate = () => {
     let newErrors = {};
-    if (!formData.fullName) newErrors.fullName = "Full Name is required";
-    if (!formData.phone) newErrors.phone = "Phone number is required";
-    if (!formData.house) newErrors.house = "House number is required";
-    if (!formData.street) newErrors.street = "Street is required";
-    if (!formData.city) newErrors.city = "City is required";
-    if (!formData.state) newErrors.state = "State is required";
-    if (!formData.pincode) newErrors.pincode = "Pincode is required";
+    ["name", "phoneNo", "houseNo", "streetName", "city", "state", "zipcode"].forEach(
+      (field) => {
+        if (!formData[field]) newErrors[field] = `${field} is required`;
+      }
+    );
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const newErrors = validate();
-    if (Object.keys(newErrors).length === 0) {
-      try {
-        if (editData?._id) {
-          await updateAddress(editData._id, formData);
-        } else {
-          await addAddress(userId, formData);
-        }
-        navigate("/profile");
-      } catch (err) {
-        console.error("Error saving address:", err);
-      }
-    } else {
-      setErrors(newErrors);
-    }
-  };
+  e.preventDefault();
+  const newErrors = validate();
+  if (Object.keys(newErrors).length === 0) {
+    try {
+      const payload = {
+        name: formData.name,
+        phoneNo: formData.phoneNo,
+        alterPhoneNo: formData.alterPhoneNo,
+        houseNo: formData.houseNo,
+        streetName: formData.streetName,
+        city: formData.city,
+        district: formData.district,
+        pincode: formData.zipcode,        // ✅ map zipcode → pincode
+        addressType: formData.type.toLowerCase(),
+      };
 
-  const handleCancel = () => {
-    navigate("/profile");
-  };
+      /*if (editData?.id) {
+        await updateAddress(userId, editData.id, payload);
+        console.log("Address updated successfully");
+      } else {
+        await addAddress(userId, payload);
+        console.log("Address added successfully");
+      }
+
+      navigate("/profile", { state: { refresh: true } });
+      } catch (err) {
+      console.error("Error saving address:", err.response?.data || err);
+      }
+      } else {
+        setErrors(newErrors);
+      }
+    };*/
+     if (editData?.id || editData?._id) {
+        // EDIT
+        const addressId = editData.id || editData._id;
+        await updateAddress(userId, addressId, payload);
+        toast.success("Address updated successfully ✅");
+      } else {
+        // ADD
+        await addAddress(userId, payload);
+        toast.success("Address added successfully 🎉");
+      }
+
+      navigate("/profile", { state: { refresh: true } });
+    } catch (err) {
+      console.error("Error saving address:", err);
+      toast.error("Failed to save address ❌");
+    }
+  } else {
+    setErrors(newErrors);
+  }
+};
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-transparent-100 p-6">
-      <div className="bg-green-50 rounded-2xl shadow-lg p-8 w-full max-w-5xl">
+    <div className="min-h-screen flex justify-center items-center bg-green-50 p-6">
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-5xl">
         <h2 className="text-2xl font-bold text-center text-green-600 mb-6">
           {editData ? "Edit Address" : "Add New Address"}
         </h2>
@@ -77,14 +114,48 @@ const AddAddress = () => {
           onSubmit={handleSubmit}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          {/* form inputs same as before */}
-          {/* ... keep your inputs and validation messages ... */}
+          {Object.entries({
+            name: "Full Name",
+            phoneNo: "Phone",
+            alterPhoneNo: "Alternate Phone",
+            houseNo: "House No",
+            streetName: "Street",
+            city: "City",
+            state: "State",
+            zipcode: "Zipcode",
+            district: "District",
+          }).map(([key, label]) => (
+            <div key={key}>
+              <label className="block text-sm font-medium">{label}</label>
+              <input
+                type="text"
+                name={key}
+                value={formData[key] || ""}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded-lg"
+              />
+              {errors[key] && <p className="text-red-500 text-sm">{errors[key]}</p>}
+            </div>
+          ))}
 
-          {/* Buttons */}
-          <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium">Type</label>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-lg"
+            >
+              <option>home</option>
+              <option>office</option>
+              <option>other</option>
+            </select>
+          </div>
+
+          <div className="col-span-full flex justify-center gap-4 mt-4">
             <button
               type="button"
-              onClick={handleCancel}
+              onClick={() => navigate("/profile")}
               className="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
             >
               Cancel

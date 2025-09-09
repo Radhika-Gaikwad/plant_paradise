@@ -53,6 +53,7 @@ const LoginForm = () => {
     const token = result?.data?.token || "v";  // replace with your actual token field
     localStorage.setItem("token", token);
       const userData = {
+        userId: result.data?.user?.userId || "UserId",
         name: result.data?.user?.name || "User",
         email: result.data?.user?.email || email,
         role: result.data?.user?.role || 0

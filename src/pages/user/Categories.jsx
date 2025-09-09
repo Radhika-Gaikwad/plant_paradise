@@ -16,6 +16,7 @@ const navigate = useNavigate();
     const fetchData = async () => {
       try {
         const cats = await getAllCategories();
+        console.log(cats)
         const allOption = {
           _id: "all",
           categoryId: "all",
@@ -173,7 +174,7 @@ const navigate = useNavigate();
   >
     {categories.map((cat) => (
       <div
-        key={cat._id}
+        key={cat.categoryId}
         onClick={() => handleCategoryClick(cat.categoryId)}
         className="relative group cursor-pointer flex-shrink-0 w-24 h-24 flex items-center justify-center"
       >

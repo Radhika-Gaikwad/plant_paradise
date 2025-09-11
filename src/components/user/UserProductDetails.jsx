@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getProductById } from "../../services/productApi";
+import { addToCart, updateCart, removeFromCart, getCart } from "../../services/cartService";
 import { Star, ArrowLeft } from "lucide-react";
+import { FaTrash } from "react-icons/fa";
 import { showToast } from "../../utils/showToast";
 
 const UserProductDetails = () => {
   const { productId } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedMedia, setSelectedMedia] = useState(null); // ✅ For main preview
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [count, setCount] = useState(0); // ✅ cart quantity
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchProduct();
+    fetchCart();
   }, [productId]);
 
   const fetchProduct = async () => {
@@ -20,7 +24,6 @@ const UserProductDetails = () => {
       const data = await getProductById(productId);
       setProduct(data);
 
-      // set default preview → first image or video
       const defaultMedia =
         data?.imageUrl?.length > 0
           ? { type: "image", url: data.imageUrl[0] }
@@ -33,6 +36,44 @@ const UserProductDetails = () => {
       showToast("❌ Failed to fetch product", "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ Load cart items
+  const fetchCart = async () => {
+    try {
+      const cartItems = await getCart();
+      const item = cartItems.find((p) => p.productId === productId);
+      if (item) {
+        setCount(item.quantity);
+      }
+    } catch (err) {
+      console.error("Failed to fetch cart", err);
+    }
+  };
+
+  // ✅ Add to Cart
+  const handleAddToCart = async () => {
+    await addToCart(productId, 1);
+    setCount(1);
+  };
+
+  // ✅ Increase
+  const handleIncrease = async () => {
+    const newCount = count + 1;
+    await updateCart(productId, newCount);
+    setCount(newCount);
+  };
+
+  // ✅ Decrease / Remove
+  const handleDecrease = async () => {
+    if (count === 1) {
+      await removeFromCart(productId);
+      setCount(0);
+    } else {
+      const newCount = count - 1;
+      await updateCart(productId, newCount);
+      setCount(newCount);
     }
   };
 
@@ -52,7 +93,6 @@ const UserProductDetails = () => {
     );
   }
 
-  // Combine images + videos into gallery
   const gallery = [
     ...(product.imageUrl?.map((img) => ({ type: "image", url: img })) || []),
     ...(product.video?.map((vid) => ({ type: "video", url: vid })) || []),
@@ -69,26 +109,16 @@ const UserProductDetails = () => {
       </button>
 
       <div className="grid md:grid-cols-2 gap-6 bg-white rounded-2xl shadow-lg overflow-hidden">
-        {/* Product Media */}
+        {/* Media Section */}
         <div className="flex flex-col items-center p-6 bg-gray-50">
-          {/* Main Preview */}
           <div className="w-full h-96 flex justify-center items-center bg-white rounded-xl shadow-md overflow-hidden">
             {selectedMedia?.type === "video" ? (
-              <video
-                src={selectedMedia.url}
-                className="w-full h-full object-cover"
-                controls
-              />
+              <video src={selectedMedia.url} className="w-full h-full object-cover" controls />
             ) : (
-              <img
-                src={selectedMedia?.url}
-                alt={product.productName}
-                className="w-full h-full object-cover"
-              />
+              <img src={selectedMedia?.url} alt={product.productName} className="w-full h-full object-cover" />
             )}
           </div>
 
-          {/* Thumbnails */}
           {gallery.length > 1 && (
             <div className="flex gap-3 mt-4 overflow-x-auto">
               {gallery.map((media, idx) => (
@@ -96,23 +126,13 @@ const UserProductDetails = () => {
                   key={idx}
                   onClick={() => setSelectedMedia(media)}
                   className={`w-20 h-20 border-2 rounded-lg overflow-hidden cursor-pointer ${
-                    selectedMedia?.url === media.url
-                      ? "border-green-600"
-                      : "border-gray-200"
+                    selectedMedia?.url === media.url ? "border-green-600" : "border-gray-200"
                   }`}
                 >
                   {media.type === "video" ? (
-                    <video
-                      src={media.url}
-                      className="w-full h-full object-cover"
-                      muted
-                    />
+                    <video src={media.url} className="w-full h-full object-cover" muted />
                   ) : (
-                    <img
-                      src={media.url}
-                      alt={`thumb-${idx}`}
-                      className="w-full h-full object-contain"
-                    />
+                    <img src={media.url} alt={`thumb-${idx}`} className="w-full h-full object-contain" />
                   )}
                 </div>
               ))}
@@ -122,10 +142,7 @@ const UserProductDetails = () => {
 
         {/* Product Info */}
         <div className="p-6 flex flex-col gap-4">
-          <h1 className="text-3xl font-bold text-green-700">
-            {product.productName}
-          </h1>
-
+          <h1 className="text-3xl font-bold text-green-700">{product.productName}</h1>
           <p className="text-gray-500">
             {product.categoryName} / {product.subCategoryName}
           </p>
@@ -137,9 +154,7 @@ const UserProductDetails = () => {
             </span>
             {product.discount > 0 && (
               <>
-                <span className="line-through text-gray-400">
-                  ₹{product.price}
-                </span>
+                <span className="line-through text-gray-400">₹{product.price}</span>
                 <span className="bg-green-100 text-green-600 px-2 py-1 rounded-lg text-sm">
                   {product.discount}% OFF
                 </span>
@@ -148,11 +163,7 @@ const UserProductDetails = () => {
           </div>
 
           {/* Stock */}
-          <p
-            className={`text-sm font-medium ${
-              product.stock ? "text-green-600" : "text-red-500"
-            }`}
-          >
+          <p className={`text-sm font-medium ${product.stock ? "text-green-600" : "text-red-500"}`}>
             {product.stock ? "In Stock" : "Out of Stock"}
           </p>
 
@@ -162,26 +173,45 @@ const UserProductDetails = () => {
               <Star
                 key={i}
                 size={20}
-                className={
-                  i < product.overAllRating
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-gray-300"
-                }
+                className={i < product.overAllRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}
               />
             ))}
           </div>
 
           {/* Description */}
-          <p className="text-gray-700 leading-relaxed">
-            {product.description}
-          </p>
+          <p className="text-gray-700 leading-relaxed">{product.description}</p>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 mt-6">
-            <button className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-xl shadow-md hover:opacity-90 transition">
-              Add to Cart
-            </button>
-            <button className="flex-1 border-2 border-green-500 text-green-600 py-3 rounded-xl hover:bg-green-50 transition">
+            {count === 0 ? (
+              // ✅ Add to Cart
+              <button
+                onClick={handleAddToCart}
+                className="flex-1 h-12 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-medium shadow hover:opacity-90 transition"
+              >
+                Add to Cart
+              </button>
+            ) : (
+              // ✅ Counter box
+              <div className="flex-1 h-12 flex items-center justify-between border border-green-500 rounded-xl px-4 bg-white transition">
+                <button
+                  onClick={handleDecrease}
+                  className="w-9 h-9 flex items-center justify-center bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+                >
+                  {count === 1 ? <FaTrash size={14} /> : "-"}
+                </button>
+                <span className="font-semibold text-green-700">{count}</span>
+                <button
+                  onClick={handleIncrease}
+                  className="w-9 h-9 flex items-center justify-center bg-green-500 text-white rounded-md hover:bg-green-600 transition"
+                >
+                  +
+                </button>
+              </div>
+            )}
+
+            {/* Buy Now */}
+            <button className="flex-1 h-12 border-2 border-green-500 text-green-600 rounded-xl font-medium hover:bg-green-50 transition">
               Buy Now
             </button>
           </div>

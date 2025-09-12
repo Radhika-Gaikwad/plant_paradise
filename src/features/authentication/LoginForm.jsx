@@ -49,8 +49,8 @@ const LoginForm = () => {
 
     try {
       const result = await dispatch(loginUser({ email, password })).unwrap();
-      showToast("addresss added sucefully ", "success");
-const token = result?.data?.token || "v";  // replace with your actual token field
+      showToast("Login successful", "success");
+    const token = result?.data?.token || "v";  // replace with your actual token field
     localStorage.setItem("token", token);
       const userData = {
         userId: result.data?.user?.userId || "UserId",
@@ -59,7 +59,8 @@ const token = result?.data?.token || "v";  // replace with your actual token fie
         role: result.data?.user?.role || 0
       };
       localStorage.setItem("user", JSON.stringify(userData));
-
+console.log(token);
+console.log(userData);
       // ✅ Correct Redirect
       if (result.data?.user?.role === 1) {
         navigate("/admin/dashboard");

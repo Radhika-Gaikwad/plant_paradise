@@ -4,6 +4,7 @@ import AdminRoutes from "./routes/AdminRoutes";
 import UserRoutes from "./routes/UserRoutes";
 import CommonRoutes from "./routes/CommonRoutes";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import './App.css';
 import LogoutConfirm from "./features/authentication/LogoutConfirm";
 import AddAddress from "./features/address/AddAddress";

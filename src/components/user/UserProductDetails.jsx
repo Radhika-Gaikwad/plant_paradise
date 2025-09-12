@@ -23,7 +23,7 @@ const UserProductDetails = () => {
     try {
       const data = await getProductById(productId);
       setProduct(data);
-
+console.log(data);
       const defaultMedia =
         data?.imageUrl?.length > 0
           ? { type: "image", url: data.imageUrl[0] }

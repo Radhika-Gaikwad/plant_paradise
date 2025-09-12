@@ -1,4 +1,4 @@
-// redux/signupSlice.js
+/*// redux/signupSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { signupService } from "./signupService";
 
@@ -39,6 +39,55 @@ const signupSlice = createSlice({
         state.success = true;
       })
       .addCase(signupUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+  },
+});
+
+export const { resetSignup } = signupSlice.actions;
+export default signupSlice.reducer;*/
+// src/features/authentication/signupSlice.js
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { signupService } from "./signupService";
+
+// Async thunk for signup
+export const signUpUser = createAsyncThunk(
+  "signup/signUpUser",
+  async (userData, thunkAPI) => {
+    try {
+      return await signupService(userData);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+const signupSlice = createSlice({
+  name: "signup",
+  initialState: {
+    loading: false,
+    success: false,
+    error: null,
+  },
+  reducers: {
+    resetSignup: (state) => {
+      state.loading = false;
+      state.success = false;
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(signUpUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(signUpUser.fulfilled, (state) => {
+        state.loading = false;
+        state.success = true;
+      })
+      .addCase(signUpUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

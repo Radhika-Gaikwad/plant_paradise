@@ -25,4 +25,3 @@ if (token) {
 }
 
 export default axiosInstance;
-

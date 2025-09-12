@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { addAddress, updateAddress } from "../../services/profileApi";
+import { toast } from "react-toastify";
+
 
 const AddAddress = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const editData = location.state?.editData;
-  const editIndex = location.state?.index;
+  const userId = localStorage.getItem("userId");
 
   const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    house: "",
-    street: "",
+    name: "",
+    phoneNo: "",
+    alterPhoneNo: "",
+    houseNo: "",
+    streetName: "",
     city: "",
     state: "",
-    pincode: "",
+    zipcode: "",
+    district: "",
     type: "Home",
   });
 
@@ -22,147 +27,117 @@ const AddAddress = () => {
 
   useEffect(() => {
     if (editData) {
-      setFormData(editData);
+      setFormData({
+        ...editData,
+        type: editData.addressType || "home",
+        zipcode: editData.pincode || "",
+        district: editData.district || "",
+      });
     }
   }, [editData]);
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   const validate = () => {
     let newErrors = {};
-    if (!formData.fullName) newErrors.fullName = "Full Name is required";
-    if (!formData.phone) newErrors.phone = "Phone number is required";
-    if (!formData.house) newErrors.house = "House number is required";
-    if (!formData.street) newErrors.street = "Street is required";
-    if (!formData.city) newErrors.city = "City is required";
-    if (!formData.state) newErrors.state = "State is required";
-    if (!formData.pincode) newErrors.pincode = "Pincode is required";
+    ["name", "phoneNo", "houseNo", "streetName", "city", "state", "zipcode"].forEach(
+      (field) => {
+        if (!formData[field]) newErrors[field] = `${field} is required`;
+      }
+    );
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const newErrors = validate();
-    if (Object.keys(newErrors).length === 0) {
-      const savedAddresses = JSON.parse(localStorage.getItem("addresses")) || [];
-      if (editIndex !== undefined) {
-        savedAddresses[editIndex] = formData;
-      } else {
-        savedAddresses.push(formData);
-      }
-      localStorage.setItem("addresses", JSON.stringify(savedAddresses));
-      navigate("/profile");
-    } else {
-      setErrors(newErrors);
-    }
-  };
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  const newErrors = validate();
+  if (Object.keys(newErrors).length === 0) {
+    try {
+      const payload = {
+        name: formData.name,
+        phoneNo: formData.phoneNo,
+        alterPhoneNo: formData.alterPhoneNo,
+        houseNo: formData.houseNo,
+        streetName: formData.streetName,
+        city: formData.city,
+        district: formData.district,
+        pincode: formData.zipcode,        // ✅ map zipcode → pincode
+        addressType: formData.type.toLowerCase(),
+      };
 
-  const handleCancel = () => {
-    navigate("/profile");
-  };
+      /*if (editData?.id) {
+        await updateAddress(userId, editData.id, payload);
+        console.log("Address updated successfully");
+      } else {
+        await addAddress(userId, payload);
+        console.log("Address added successfully");
+      }
+
+      navigate("/profile", { state: { refresh: true } });
+      } catch (err) {
+      console.error("Error saving address:", err.response?.data || err);
+      }
+      } else {
+        setErrors(newErrors);
+      }
+    };*/
+     if (editData?.id || editData?._id) {
+        // EDIT
+        const addressId = editData.id || editData._id;
+        await updateAddress(userId, addressId, payload);
+        toast.success("Address updated successfully ✅");
+      } else {
+        // ADD
+        await addAddress(userId, payload);
+        toast.success("Address added successfully 🎉");
+      }
+
+      navigate("/profile", { state: { refresh: true } });
+    } catch (err) {
+      console.error("Error saving address:", err);
+      toast.error("Failed to save address ❌");
+    }
+  } else {
+    setErrors(newErrors);
+  }
+};
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-transparent-100 p-6">
-      <div className="bg-green-50 rounded-2xl shadow-lg p-8 w-full max-w-5xl">
+    <div className="min-h-screen flex justify-center items-center bg-green-50 p-6">
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-5xl">
         <h2 className="text-2xl font-bold text-center text-green-600 mb-6">
           {editData ? "Edit Address" : "Add New Address"}
         </h2>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Full Name */}
-          <div>
-            <label className="block text-sm font-medium">Full Name</label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
-          </div>
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          {Object.entries({
+            name: "Full Name",
+            phoneNo: "Phone",
+            alterPhoneNo: "Alternate Phone",
+            houseNo: "House No",
+            streetName: "Street",
+            city: "City",
+            state: "State",
+            zipcode: "Zipcode",
+            district: "District",
+          }).map(([key, label]) => (
+            <div key={key}>
+              <label className="block text-sm font-medium">{label}</label>
+              <input
+                type="text"
+                name={key}
+                value={formData[key] || ""}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded-lg"
+              />
+              {errors[key] && <p className="text-red-500 text-sm">{errors[key]}</p>}
+            </div>
+          ))}
 
-          {/* Phone */}
-          <div>
-            <label className="block text-sm font-medium">Phone</label>
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
-          </div>
-
-          {/* House */}
-          <div>
-            <label className="block text-sm font-medium">House</label>
-            <input
-              type="text"
-              name="house"
-              value={formData.house}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.house && <p className="text-red-500 text-sm">{errors.house}</p>}
-          </div>
-
-          {/* Street */}
-          <div>
-            <label className="block text-sm font-medium">Street</label>
-            <input
-              type="text"
-              name="street"
-              value={formData.street}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.street && <p className="text-red-500 text-sm">{errors.street}</p>}
-          </div>
-
-          {/* City */}
-          <div>
-            <label className="block text-sm font-medium">City</label>
-            <input
-              type="text"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.city && <p className="text-red-500 text-sm">{errors.city}</p>}
-          </div>
-
-          {/* State */}
-          <div>
-            <label className="block text-sm font-medium">State</label>
-            <input
-              type="text"
-              name="state"
-              value={formData.state}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.state && <p className="text-red-500 text-sm">{errors.state}</p>}
-          </div>
-
-          {/* Pincode */}
-          <div>
-            <label className="block text-sm font-medium">Pincode</label>
-            <input
-              type="text"
-              name="pincode"
-              value={formData.pincode}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            {errors.pincode && <p className="text-red-500 text-sm">{errors.pincode}</p>}
-          </div>
-
-          {/* Type */}
           <div>
             <label className="block text-sm font-medium">Type</label>
             <select
@@ -171,17 +146,16 @@ const AddAddress = () => {
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-lg"
             >
-              <option>Home</option>
-              <option>Office</option>
-              <option>Other</option>
+              <option>home</option>
+              <option>office</option>
+              <option>other</option>
             </select>
           </div>
 
-          {/* Buttons */}
-          <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center gap-4 mt-4">
+          <div className="col-span-full flex justify-center gap-4 mt-4">
             <button
               type="button"
-              onClick={handleCancel}
+              onClick={() => navigate("/profile")}
               className="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
             >
               Cancel

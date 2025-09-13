@@ -1,15 +1,30 @@
 // src/pages/Home.jsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Hero from "../../components/Hero";
 import PlantCard from "../../components/ui/PlantCard";
 import VideoPage from "../../components/ui/VideoPage";
 import Testimonials from "../../components/ui/Testimonials";
-import { plants } from "../../data/plants";
+import { getAllProducts } from "../../services/productApi"; // ✅ import API
+import { toast } from "react-toastify"; // ✅ use react-toastify
 
 const Home = () => {
   const scrollRef = useRef(null);
+  const [products, setProducts] = useState([]);
 
-  // Auto-scroll every 2s
+  // ✅ Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const items = await getAllProducts();
+        setProducts(items);
+      } catch (error) {
+        toast.error(error.message || "Failed to load products");
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  // ✅ Auto-scroll every 2s
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
@@ -31,8 +46,6 @@ const Home = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-
-      {/* ✅ Main content */}
       <main className="flex-grow">
         <Hero />
 
@@ -44,18 +57,26 @@ const Home = () => {
 
           <div
             ref={scrollRef}
-            className="flex gap-6 overflow-x-hidden scroll-smooth px-4"
+            className="flex gap-6 overflow-x-auto scroll-smooth scrollbar-hide px-4"
           >
-            {[...plants, ...plants].map((plant, index) => (
-              <PlantCard key={index} plant={plant} />
-            ))}
+            {products.length > 0 ? (
+              products.map((plant, index) => (
+                <div
+                  key={plant.productId || index}
+                  className="shrink-0 w-full sm:w-1/2 md:w-1/3 lg:w-1/4"
+                >
+                  <PlantCard plant={plant} />
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center w-full">
+                No products available
+              </p>
+            )}
           </div>
         </section>
 
-        {/* 🎥 Video Section */}
         <VideoPage />
-
-        {/* ⭐ Testimonials Section */}
         <Testimonials />
       </main>
     </div>

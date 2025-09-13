@@ -6,10 +6,14 @@ import { Provider } from 'react-redux';
 import { store } from './store';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { CartProvider } from "./context/cartcontext.jsx";// adjust path
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Provider store={store}>
+      <CartProvider>
       <App />
+      </CartProvider>
     </Provider>
   </React.StrictMode>,
 );

@@ -11,3 +11,11 @@
     transform: translate3d(0, 0, 0);
   }
 }
+/* Hide horizontal scrollbar but allow scroll */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

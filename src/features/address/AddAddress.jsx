@@ -49,7 +49,7 @@ const AddAddress = () => {
     return newErrors;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {                                                  
   e.preventDefault();
   const newErrors = validate();
   if (Object.keys(newErrors).length === 0) {
@@ -60,8 +60,9 @@ const AddAddress = () => {
         alterPhoneNo: formData.alterPhoneNo,
         houseNo: formData.houseNo,
         streetName: formData.streetName,
-        city: formData.city,
+        city: formData.city,                              
         district: formData.district,
+        state: formData.state,
         pincode: formData.zipcode,        // ✅ map zipcode → pincode
         addressType: formData.type.toLowerCase(),
       };

@@ -7,6 +7,7 @@ const PlantCard = ({ plant }) => {
   const navigate = useNavigate();
   const [count, setCount] = useState(0); // cart count for this product
 
+  console.log(plant);
   if (!plant) return null;
 
 useEffect(() => {

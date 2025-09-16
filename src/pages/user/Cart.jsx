@@ -14,7 +14,8 @@ import {
 // - Expects the service functions (getCart, updateCart, removeFromCart, addToCart)
 // - Replace toast/notification with your project's helpers if needed
 
-const currency = (v) => `₹${v.toLocaleString()}`;
+//const currency = (v) => `₹${v.toLocaleString()}`;
+const currency = (v) => `₹${(v ?? 0).toLocaleString("en-IN")}`;
 
 export default function CartPage() {
   const [items, setItems] = useState([]);
@@ -231,12 +232,23 @@ export default function CartPage() {
                   <span>{currency(grandTotal)}</span>
                 </div>
 
-                <button
-                  onClick={() => navigate("/place-order")}
-                  className="mt-4 w-full px-4 py-3 bg-green-600 hover:bg-green-700 rounded-2xl text-white font-semibold shadow"
-                >
-                  Proceed to Checkout
-                </button>
+               <button
+  onClick={() =>
+    navigate("/checkout", {
+      state: {
+        cartItems: items,
+        subtotal,
+        totalDiscount,
+        deliveryCharge,
+        grandTotal,
+      },
+    })
+  }
+  className="mt-4 w-full px-4 py-3 bg-green-600 hover:bg-green-700 rounded-2xl text-white font-semibold shadow"
+>
+  Proceed to Checkout
+</button>
+
 
                 <button
                   onClick={() => navigate("/categories")}

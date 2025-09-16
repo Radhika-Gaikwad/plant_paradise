@@ -59,7 +59,8 @@ const LoginForm = () => {
         role: result.data?.user?.role || 0
       };
       localStorage.setItem("user", JSON.stringify(userData));
-
+console.log(token);
+console.log(userData);
       // ✅ Correct Redirect
       if (result.data?.user?.role === 1) {
         navigate("/admin/dashboard");

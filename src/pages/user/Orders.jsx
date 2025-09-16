@@ -1,12 +1,20 @@
 // src/pages/Orders.jsx
 import React, { useEffect, useState } from "react";
+import { getOrders } from "../../services/orderService"; // API to fetch user orders
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    const savedOrders = JSON.parse(localStorage.getItem("orders")) || [];
-    setOrders(savedOrders);
+    const fetchOrders = async () => {
+      try {
+        const res = await getOrders(); // fetch from backend
+        setOrders(res || []);
+      } catch (err) {
+        console.error("Failed to fetch orders", err);
+      }
+    };
+    fetchOrders();
   }, []);
 
   return (
@@ -16,39 +24,31 @@ const Orders = () => {
       {orders.length === 0 ? (
         <p className="text-gray-500">No orders found.</p>
       ) : (
-        orders.map((order, orderIndex) => (
-          <div
-            key={orderIndex}
-            className="border border-gray-200 rounded-lg mb-6 p-4 shadow-sm"
-          >
+        orders.map((order, index) => (
+          <div key={index} className="border border-gray-200 rounded-lg mb-6 p-4 shadow-sm">
             <h2 className="text-lg font-semibold mb-4 text-green-600">
-              Order #{orderIndex + 1}
+              Order #{order.id || index + 1}
             </h2>
-            <div className="space-y-4">
-              {order.map((item, itemIndex) => (
-                <div
-                  key={itemIndex}
-                  className="flex items-center justify-between border-b pb-3"
-                >
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={item.imageUrl || "https://via.placeholder.com/80"}
-                      alt={item.name}
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                    <div>
-                      <h3 className="font-semibold">{item.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        Qty: {item.quantity}
-                      </p>
-                    </div>
+            {order.items.map((item, i) => (
+              <div key={i} className="flex items-center justify-between border-b py-2">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={item.imageUrl || "https://via.placeholder.com/80"}
+                    alt={item.productName}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <div>
+                    <h3 className="font-semibold">{item.productName}</h3>
+                    <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                   </div>
-                  <p className="font-semibold text-green-600">
-                    ₹{item.price * item.quantity}
-                  </p>
                 </div>
-              ))}
-            </div>
+                <p className="font-semibold text-green-600">
+                  ₹{item.finalPrice * item.quantity}
+                </p>
+              </div>
+            ))}
+            <p className="text-right font-bold mt-2">Total: ₹{order.total}</p>
+            <p className="text-right text-sm text-gray-500">Address: {order.address}</p>
           </div>
         ))
       )}

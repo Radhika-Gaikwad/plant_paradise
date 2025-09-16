@@ -38,7 +38,7 @@ export default function CartPage() {
     }
   };
 
-  const changeQuantity = async (productId, newQty) => {
+  /*const changeQuantity = async (productId, newQty) => {
     if (newQty < 1) return;
     try {
       setUpdating(true);
@@ -64,6 +64,36 @@ export default function CartPage() {
       setUpdating(false);
     }
   };
+  */
+    const changeQuantity = async (productId, newQty) => {
+    if (newQty < 1) return;
+    try {
+      setUpdating(true);
+      await updateCart(productId, newQty);
+      setItems((prev) =>
+        prev.map((it) => (it.productId === productId ? { ...it, quantity: newQty } : it))
+      );
+      window.dispatchEvent(new Event("cartUpdated")); // 🔔 notify header
+    } catch (err) {
+      console.error("update failed", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleRemove = async (productId) => {
+    try {
+      setUpdating(true);
+      await removeFromCart(productId);
+      setItems((prev) => prev.filter((p) => p.productId !== productId));
+      window.dispatchEvent(new Event("cartUpdated")); // 🔔 notify header
+    } catch (err) {
+      console.error("remove failed", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
 
   const handleBuyNow = async (product) => {
     // For Buy Now we'll add single product to a temporary checkout or navigate to checkout
@@ -202,7 +232,7 @@ export default function CartPage() {
                 </div>
 
                 <button
-                  onClick={() => navigate("/checkout")}
+                  onClick={() => navigate("/place-order")}
                   className="mt-4 w-full px-4 py-3 bg-green-600 hover:bg-green-700 rounded-2xl text-white font-semibold shadow"
                 >
                   Proceed to Checkout

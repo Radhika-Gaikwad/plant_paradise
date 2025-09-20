@@ -50,7 +50,7 @@ export const placeOrder = async (orderBody) => {
       orderBody,
       getAuthHeaders()
     );
-    showToast("Order placed successfully!", "success");
+    console.log(data);
     return data;
   } catch (error) {
     showToast(error.response?.data?.message || "Failed to place order", "error");

@@ -13,6 +13,7 @@ import {
   placeOrder,
 } from "../../services/orderService";
 import PaymentPopup from "../../components/ui/PaymentPopup";
+import {showToast} from "../../utils/showToast";
 
 
 const currency = (v) => `₹${v?.toLocaleString?.() ?? v}`;
@@ -202,13 +203,12 @@ navigate("/orders")
     // if you have a cart service: await clearCart(); or dispatch({ type: "CLEAR_CART" });
     // localStorage.removeItem("cart"); // if you store cart in localStorage
 
-    // navigate to order detail if orderId returned, otherwise to orders list
-    const orderId = extractOrderIdFromResponse(placeRes);
-    if (orderId) {
-      navigate(`/orders/${orderId}`);
-    } else {
-      navigate("/orders");
-    }
+ const orderId = placeRes?.orderId || extractOrderIdFromResponse(placeRes);
+if (orderId) {
+  navigate(`/orders/${orderId}`);
+} else {
+  navigate("/orders"); // fallback if no id
+}
   } catch (err) {
     console.error("Payment failed:", err);
     setProcessingStep(null);
@@ -274,15 +274,12 @@ const handleCOD = async () => {
     setProcessingStep(null);
     showToast("✅ Order Placed Successfully (COD) 🎉", "success");
 
-    // clear cart if applicable
-    // clearCart();
- navigate("/orders")
-    const orderId = extractOrderIdFromResponse(placeRes);
-    if (orderId) {
-      navigate(`/orders/${orderId}`);
-    } else {
-      navigate("/orders");
-    }
+const orderId = placeRes?.orderId || extractOrderIdFromResponse(placeRes);
+if (orderId) {
+  navigate(`/orders/${orderId}`);
+} else {
+  navigate("/orders"); // fallback if no id
+}
   } catch (err) {
     console.error("COD create failed:", err);
     setProcessingStep(null);

@@ -29,7 +29,7 @@ const OrderDetails = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       const orders = await getMyOrders();
-      const found = orders.find((o) => o._id === id);
+      const found = orders.find((o) => o._orderId === id);
       setOrder(found || null);
     };
     fetchOrder();

@@ -11,6 +11,7 @@ import Blogs from "../pages/admin/Blogs";
 import LogoutConfirm from "../pages/admin/LogoutConfirm";
 import Profile from "../features/profile/Profile";
 import ProductDetails from "../components/admin/ProductDetails";
+import AdminOrderDetails from "../pages/admin/orderDetails";
 const AdminRoutes = () => {
   return (
     <Routes>
@@ -23,7 +24,7 @@ const AdminRoutes = () => {
         <Route path="/blogs" element={<Blogs />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/products/productDetails/:productId" element={<ProductDetails />} />
-
+<Route path="/orders/:orderId" element={<AdminOrderDetails />} />
 
       </Route>
       <Route path="logout-confirm" element={<LogoutConfirm />} />

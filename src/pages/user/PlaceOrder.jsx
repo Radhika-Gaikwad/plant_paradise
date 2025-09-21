@@ -75,7 +75,74 @@ const PlaceOrder = () => {
   const deliveryCharge = subtotal === 0 || subtotal > 999 ? 0 : 49;
   const total = subtotal + deliveryCharge;
 
+   // ✅ UPDATED confirmOrder
   const confirmOrder = async () => {
+    if (cartItems.length === 0) {
+      toast.error("Your cart is empty ❌");
+      return;
+    }
+    if (!selectedAddress) {
+      toast.error("Please select a delivery address ❌");
+      return;
+    }
+
+    try {
+      if (paymentMethod === "online") {
+        // Step 1: Create payment order
+        const paymentOrder = await createPaymentOrder(total);
+
+        // Step 2: Razorpay Checkout
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: paymentOrder.amount,
+          currency: paymentOrder.currency,
+          order_id: paymentOrder.id,
+          handler: async (response) => {
+            // Step 3: Verify payment
+            const verify = await verifyPaymentOrder(response);
+            if (verify.success) {
+              await placeOrder({
+                items: cartItems,
+                address: selectedAddress,
+                total,
+                orderType,
+                paymentMethod: "online",
+                paymentMode: "paid",
+              });
+              toast.success("Order placed successfully ✅");
+              navigate("/orders");
+            } else {
+              toast.error("Payment verification failed ❌");
+            }
+          },
+          prefill: {
+            name: selectedAddress.name,
+            contact: selectedAddress.phoneNo,
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        // COD Order
+        await placeOrder({
+          items: cartItems,
+          address: selectedAddress,
+          total,
+          orderType,
+          paymentMethod: "cod",
+          paymentMode: "pending",
+        });
+        toast.success("Order placed successfully ✅");
+        navigate("/orders");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to place order ❌");
+      console.error(err);
+    }
+  };
+
+  /*const confirmOrder = async () => {
     if (cartItems.length === 0) {
       toast.error("Your cart is empty ❌");
       return;
@@ -99,7 +166,7 @@ const PlaceOrder = () => {
       toast.error(err.response?.data?.message || "Failed to place order ❌");
       console.error(err);
     }
-  };
+  };*/
 
   const handleAddEdit = async () => {
     try {

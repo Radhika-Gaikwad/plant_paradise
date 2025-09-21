@@ -11,10 +11,13 @@ import PlaceOrder from "../pages/user/PlaceOrder";
 import LoginForm from "../features/authentication/LoginForm";
 import Profile from "../features/profile/Profile";
 import ProductsC from "../pages/user/ProductsC";
-import  UserProductDetails from "../components/user/UserProductDetails";
+import UserProductDetails from "../components/user/UserProductDetails";
 import AddressPage from "../pages/user/AddressPage";
 import CheckoutPage from "../pages/user/CheckoutPage";
 import OrderDetails from "../pages/user/OrderDetails";
+import Blog from "../pages/user/Blog";
+import BlogDetails  from "../pages/user/BlogDetails";
+
 const UserRoutes = () => {
   return (
     <Routes>
@@ -35,7 +38,9 @@ const UserRoutes = () => {
         <Route path="/product/:productId" element={<UserProductDetails />} />
         <Route path="/addresses" element={<AddressPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />   
-        <Route path="/orders/:id" element={<OrderDetails />} />      
+        <Route path="/orders/:id" element={<OrderDetails />} />   
+        <Route path="/blogs" element={<Blog />} />
+        <Route path="/blogs/:id" element={<BlogDetails />} />   
       </Route>
     </Routes>
   );

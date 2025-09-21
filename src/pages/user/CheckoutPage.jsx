@@ -1,6 +1,6 @@
 // src/pages/CheckoutPage.jsx
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom"; 
 import ProcessingPopup from "../../components/ui/ProcessingPopup";
 import {
   getUserAddresses,
@@ -12,7 +12,8 @@ import {
   verifyPaymentOrder,
   placeOrder,
 } from "../../services/orderService";
-
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import PaymentPopup from "../../components/ui/PaymentPopup";
 
 
@@ -22,6 +23,7 @@ export default function CheckoutPage() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  
   const {
     cartItems = [],
     subtotal = 0,
@@ -34,8 +36,8 @@ export default function CheckoutPage() {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [items, setItems] = useState(cartItems);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-const [showPaymentPopup, setShowPaymentPopup] = useState(false);
-const [processingStep, setProcessingStep] = useState(null); 
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+  const [processingStep, setProcessingStep] = useState(null); 
   // fetch addresses
   useEffect(() => {
     async function fetchAddresses() {
@@ -103,11 +105,11 @@ const handlePayOnline = async (method) => {
   try {
     // quick validations
     if (!selectedAddress) {
-      showToast("Please select a delivery address", "error");
+      toast.error("Please select a delivery address");
       return;
     }
     if (!items || items.length === 0) {
-      showToast("Your cart is empty", "error");
+      toast.errort("Your cart is empty");
       return;
     }
 
@@ -116,7 +118,7 @@ const handlePayOnline = async (method) => {
     // validate productId and quantity
     const bad = mapped.find((p) => !p.productId || p.quantity <= 0);
     if (bad) {
-      showToast("One or more cart items are invalid. Please refresh your cart.", "error");
+      toast.error("One or more cart items are invalid. Please refresh your cart.");
       return;
     }
 
@@ -129,7 +131,7 @@ const handlePayOnline = async (method) => {
     });
     if (stockIssue) {
       const name = stockIssue.raw.productName ?? stockIssue.raw.name ?? "One item";
-      showToast(`${name} does not have enough stock. Reduce quantity.`, "error");
+      toast.error(`${name} does not have enough stock. Reduce quantity.`);
       return;
     }
 
@@ -197,8 +199,8 @@ const handlePayOnline = async (method) => {
 
     // success => clear processing and show success
     setProcessingStep(null);
-    showToast("✅ Order Placed Successfully 🎉", "success");
-navigate("/orders")
+    toast.success("✅ Order Placed Successfully 🎉");
+    navigate("/orders")
     // optional: clear local cart / context so next checkout doesn't reuse old values
     // if you have a cart service: await clearCart(); or dispatch({ type: "CLEAR_CART" });
     // localStorage.removeItem("cart"); // if you store cart in localStorage
@@ -217,7 +219,7 @@ navigate("/orders")
     // show error from backend if available
     const message =
       err?.response?.data?.message ?? err?.message ?? "Payment / Order failed. Please try again.";
-    showToast(message, "error");
+    toast.error(message);
   }
 };
 
@@ -225,18 +227,18 @@ navigate("/orders")
 const handleCOD = async () => {
   try {
     if (!selectedAddress) {
-      showToast("Please select a delivery address", "error");
+      toast.error("Please select a delivery address");
       return;
     }
     if (!items || items.length === 0) {
-      showToast("Your cart is empty", "error");
+      toast.error("Your cart is empty");
       return;
     }
 
     const mapped = buildProductsPayload(items);
     const bad = mapped.find((p) => !p.productId || p.quantity <= 0);
     if (bad) {
-      showToast("One or more cart items are invalid. Please refresh your cart.", "error");
+      toast.error("One or more cart items are invalid. Please refresh your cart.");
       return;
     }
 
@@ -249,7 +251,7 @@ const handleCOD = async () => {
     });
     if (stockIssue) {
       const name = stockIssue.raw.productName ?? stockIssue.raw.name ?? "One item";
-      showToast(`${name} does not have enough stock. Reduce quantity.`, "error");
+      toast.error(`${name} does not have enough stock. Reduce quantity.`);
       return;
     }
 
@@ -273,11 +275,11 @@ const handleCOD = async () => {
     const placeRes = await placeOrder(orderBody);
 
     setProcessingStep(null);
-    showToast("✅ Order Placed Successfully (COD) 🎉", "success");
+    toast.success("✅ Order Placed Successfully (COD) 🎉");
 
     // clear cart if applicable
     // clearCart();
- navigate("/orders")
+    navigate("/orders")
     const orderId = extractOrderIdFromResponse(placeRes);
     if (orderId) {
       navigate(`/orders/${orderId}`);
@@ -289,7 +291,7 @@ const handleCOD = async () => {
     setProcessingStep(null);
     const message =
       err?.response?.data?.message ?? err?.message ?? "COD order failed. Please try again.";
-    showToast(message, "error");
+    toast.error(message);
   }
 };
 
@@ -504,4 +506,3 @@ const handleCOD = async () => {
 </div>
   );
 }
-              

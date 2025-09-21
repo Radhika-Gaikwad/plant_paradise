@@ -12,21 +12,24 @@ import LogoutConfirm from "../pages/admin/LogoutConfirm";
 import Profile from "../features/profile/Profile";
 import ProductDetails from "../components/admin/ProductDetails";
 import AdminOrderDetails from "../pages/admin/orderDetails";
+
 const AdminRoutes = () => {
   return (
     <Routes>
       <Route element={<AdminLayout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/products" element={<AdminProducts />} />
-        <Route path="/orders" element={<AdminOrders />} />
-        <Route path="/users" element={<Users />} />
-        <Route path="/categories" element={<Categories />} />
-        <Route path="/blogs" element={<Blogs />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/products/productDetails/:productId" element={<ProductDetails />} />
-<Route path="/orders/:orderId" element={<AdminOrderDetails />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="products" element={<AdminProducts />} />
+        <Route path="orders" element={<AdminOrders />} />
+        <Route path="users" element={<Users />} />
+        <Route path="categories" element={<Categories />} />
+        <Route path="blogs" element={<Blogs />} />
+        <Route path="profile" element={<Profile />} />
 
+        {/* Details pages */}
+        <Route path="products/productDetails/:productId" element={<ProductDetails />} />
+        <Route path="orders/orderDetails/:orderId" element={<AdminOrderDetails />} />
       </Route>
+
       <Route path="logout-confirm" element={<LogoutConfirm />} />
     </Routes>
   );

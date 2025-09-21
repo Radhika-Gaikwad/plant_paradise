@@ -1,5 +1,5 @@
 // AdminOrderDetails.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -10,7 +10,7 @@ import {
   Loader2,
 } from "lucide-react";
 import OrderService from "../../services/orderAdmin";
-
+import { showToast } from "../../utils/showToast"; 
 const STATUS_OPTIONS = [
   "PLACED",
   "CONFIRMED",
@@ -27,20 +27,34 @@ const AdminOrderDetails = () => {
   const { orderId } = useParams();
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState(state?.order);
+  console.log("OrderDetails Render", orderId, order);
 
-  if (!order) {
+ useEffect(() => {
+    if (!order && orderId) {
+      const fetchOrder = async () => {
+        try {
+          setLoading(true);
+          const fetchedOrder = await OrderService.getOrderById(orderId);
+          setOrder(fetchedOrder);
+        } catch (err) {
+          setError(err?.message || "Failed to fetch order");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchOrder();
+    }
+  }, [order, orderId]);
+
+  if (loading && !order) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-gray-600">
-        <p className="mb-4">No order data found for ID: {orderId}</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow"
-        >
-          Go Back
-        </button>
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
+        <Loader2 className="animate-spin h-6 w-6 mr-2" />
+        Loading order details...
       </div>
     );
   }
+
 
   // Status color mapping
   const statusColors = {
@@ -53,62 +67,52 @@ const AdminOrderDetails = () => {
     CANCELLED: "bg-red-100 text-red-700",
   };
 
-  // --- handlers ---
-  const handleStatusChange = async (newStatus) => {
+const handleStatusChange = async (newStatus) => {
     if (!newStatus || order.status === newStatus) return;
-    if (
-      !window.confirm(
-        `Change status of order ${order.orderId} to ${newStatus}?`
-      )
-    )
-      return;
+
     try {
       setLoading(true);
       await OrderService.updateOrderStatus(order.orderId, {
         status: newStatus,
       });
       setOrder({ ...order, status: newStatus });
+      showToast(`Order status updated to ${newStatus}`, "success");
     } catch (err) {
-      alert(err?.message || "Failed to update status");
+      showToast(err?.message || "Failed to update status", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleAdminCancel = async () => {
-    if (!window.confirm(`Admin cancel order ${order.orderId}?`)) return;
     try {
       setLoading(true);
       await OrderService.adminCancelOrder(order.orderId);
       setOrder({ ...order, status: "CANCELLED" });
+      showToast(`Order ${order.orderId} cancelled successfully`, "success");
     } catch (err) {
-      alert(err?.message || "Failed to cancel order");
+      showToast(err?.message || "Failed to cancel order", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        `Permanently delete order ${order.orderId}? This cannot be undone.`
-      )
-    )
-      return;
     try {
       setLoading(true);
       await OrderService.deleteOrder(order.orderId);
-      alert("Order deleted successfully");
+      showToast("Order deleted successfully", "success");
       navigate(-1);
     } catch (err) {
-      alert(err?.message || "Failed to delete order");
+      showToast(err?.message || "Failed to delete order", "error");
     } finally {
       setLoading(false);
     }
   };
 
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="flex items-center mb-6">
         <button
@@ -120,9 +124,9 @@ const AdminOrderDetails = () => {
       </div>
 
       {/* Order Summary */}
-      <div className="bg-white shadow rounded-2xl p-6 mb-6">
+      <div className="bg-white shadow rounded-2xl p-2 mb-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="lg:text-md  text-sm font-bold text-gray-800">
             Order #{order.orderId}
           </h1>
           <span

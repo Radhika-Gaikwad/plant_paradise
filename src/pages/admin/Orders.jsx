@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import OrderService from "../../services/orderAdmin";
 import debounce from "lodash/debounce";
 import { Eye, XCircle, Trash2 } from "lucide-react";
-
+import { showToast } from "../../utils/showToast";
 const STATUS_OPTIONS = [
   "PLACED",
   "CONFIRMED",
@@ -194,51 +194,57 @@ const AdminOrders = () => {
     return filteredOrders.slice(start, start + limit);
   }, [filteredOrders, page, limit]);
 
-  // action handlers
-   const openOrder = (order) => {
-    navigate(`/orders/${order.orderId}`, { state: { order } });
-  };
+const openOrder = (order) => {
+  console.log("Open order", order);
+  navigate(`/admin/orders/orderDetails/${order.orderId}`, { state: { order } });
+};
+
   const closeOrder = () => setSelectedOrder(null);
 
-  const handleStatusChange = async (order, newStatus) => {
-    if (!newStatus || order.status === newStatus) return;
-    if (!window.confirm(`Change status of order ${order.orderId} to ${newStatus}?`)) return;
-    try {
-      setLoading(true);
-      await OrderService.updateOrderStatus(order.orderId, { status: newStatus });
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      alert(err?.message || "Failed to update status");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleAdminCancel = async (order) => {
-    if (!window.confirm(`Admin cancel order ${order.orderId}?`)) return;
-    try {
-      setLoading(true);
-      await OrderService.adminCancelOrder(order.orderId);
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      alert(err?.message || "Failed to cancel order");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleDelete = async (order) => {
-    if (!window.confirm(`Permanently delete order ${order.orderId}? This cannot be undone.`)) return;
-    try {
-      setLoading(true);
-      await OrderService.deleteOrder(order.orderId);
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      alert(err?.message || "Failed to delete order");
-    } finally {
-      setLoading(false);
-    }
-  };
+// ...
+
+const handleStatusChange = async (order, newStatus) => {
+  if (!newStatus || order.status === newStatus) return;
+  try {
+    setLoading(true);
+    await OrderService.updateOrderStatus(order.orderId, { status: newStatus });
+    setRefreshKey((k) => k + 1);
+    showToast(`Order ${order.orderId} status updated to ${newStatus}`, "success");
+  } catch (err) {
+    showToast(err?.message || "Failed to update status", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleAdminCancel = async (order) => {
+  try {
+    setLoading(true);
+    await OrderService.adminCancelOrder(order.orderId);
+    setRefreshKey((k) => k + 1);
+    showToast(`Order ${order.orderId} cancelled successfully`, "success");
+  } catch (err) {
+    showToast(err?.message || "Failed to cancel order", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleDelete = async (order) => {
+  try {
+    setLoading(true);
+    await OrderService.deleteOrder(order.orderId);
+    setRefreshKey((k) => k + 1);
+    showToast(`Order ${order.orderId} deleted permanently`, "success");
+  } catch (err) {
+    showToast(err?.message || "Failed to delete order", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // UI helpers
   const fmtDateOnly = (d) => (d ? new Date(d).toLocaleDateString() : "-");
@@ -260,9 +266,9 @@ const AdminOrders = () => {
   const tableMaxHeightStyle = { maxHeight: computeTableMaxHeight() };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-2">
       {/* Header */}
-      <div className="bg-white shadow-md rounded-2xl p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
+      <div className="bg-white shadow-md rounded-2xl p-2  mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-800">Manage Orders</h1>
           <p className="text-gray-500 mt-2">View, filter and manage customer orders.</p>
@@ -508,26 +514,6 @@ const AdminOrders = () => {
 
       {error && <div className="mt-3 text-red-600">{error}</div>}
 
-      {/* Drawer */}
-      {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-end z-50">
-          <div className="w-full md:w-1/3 bg-white h-full shadow-lg p-6 overflow-y-auto">
-            <button onClick={closeOrder} className="text-gray-600 hover:text-black mb-4">Close ✖</button>
-            <h2 className="text-lg font-bold mb-4">Order {selectedOrder.orderId}</h2>
-            <p className="mb-2">Customer: {selectedOrder.userName}</p>
-            <p className="mb-2">Email: {selectedOrder.userEmail}</p>
-            <p className="mb-2">Total: ₹{selectedOrder.totalPrice}</p>
-            <p className="mb-2">Created On: {fmtDateOnly(selectedOrder.createdOn)}</p>
-
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Update Status</label>
-              <select value={selectedOrder.status || ""} onChange={(e) => handleStatusChange(selectedOrder, e.target.value)} className="p-2 border rounded w-full">
-                {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

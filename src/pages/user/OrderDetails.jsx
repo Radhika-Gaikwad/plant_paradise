@@ -1,6 +1,6 @@
 // src/pages/OrderDetails.jsx
 import React, { useEffect, useState } from "react";
-import { getMyOrders } from "../../services/orderService";
+import { getMyOrders, getOrderById} from "../../services/orderService";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Package,
@@ -26,13 +26,25 @@ const OrderDetails = () => {
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
 
-  useEffect(() => {
+ /* useEffect(() => {
     const fetchOrder = async () => {
       const orders = await getMyOrders();
       const found = orders.find((o) => o._id === id);
       setOrder(found || null);
     };
     fetchOrder();
+  }, [id]);*/
+    useEffect(() => {
+    const fetchOrder = async () => {
+    try {
+      const data = await getOrderById(id); // fetch the order directly
+      setOrder(data);
+    } catch (error) {
+      console.error(error);
+      setOrder(null);
+    }
+    };
+     fetchOrder();
   }, [id]);
 
   if (!order) return <p className="p-6 text-center">Loading...</p>;

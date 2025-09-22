@@ -110,7 +110,7 @@ const PlaceOrder = () => {
                 paymentMode: "paid",
               });
               toast.success("Order placed successfully ✅");
-              navigate("/orders");
+              navigate(`/orders/${orderData._id}`);
             } else {
               toast.error("Payment verification failed ❌");
             }
@@ -134,7 +134,7 @@ const PlaceOrder = () => {
           paymentMode: "pending",
         });
         toast.success("Order placed successfully ✅");
-        navigate("/orders");
+        navigate(`/orders/${orderData._id}`);
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to place order ❌");

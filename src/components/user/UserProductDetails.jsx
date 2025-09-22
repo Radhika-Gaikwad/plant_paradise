@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getProductById } from "../../services/productApi";
+import { getProductById, getProductsByCategory } from "../../services/productApi";
 import { addToCart, updateCart, removeFromCart, getCart } from "../../services/cartService";
 import { Star, ArrowLeft } from "lucide-react";
 import { FaTrash } from "react-icons/fa";
 import { showToast } from "../../utils/showToast";
+import PlantCard from "../../components/ui/PlantCard";
 
 const UserProductDetails = () => {
   const { productId } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedMedia, setSelectedMedia] = useState(null);
-  const [count, setCount] = useState(0); // ✅ cart quantity
+  const [count, setCount] = useState(0);
+  const [relatedProducts, setRelatedProducts] = useState([]); // ✅ related
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,17 +23,23 @@ const UserProductDetails = () => {
 
   const fetchProduct = async () => {
     try {
+      setLoading(true);
       const data = await getProductById(productId);
       setProduct(data);
-console.log(data);
+
       const defaultMedia =
         data?.imageUrl?.length > 0
           ? { type: "image", url: data.imageUrl[0] }
           : data?.video?.length > 0
           ? { type: "video", url: data.video[0] }
           : null;
-
       setSelectedMedia(defaultMedia);
+
+      // ✅ fetch related products by category
+      if (data.categoryId) {
+        const catProducts = await getProductsByCategory(data.categoryId);
+        setRelatedProducts(catProducts.filter((p) => p._id !== data._id));
+      }
     } catch (error) {
       showToast("❌ Failed to fetch product", "error");
     } finally {
@@ -39,33 +47,27 @@ console.log(data);
     }
   };
 
-  // ✅ Load cart items
   const fetchCart = async () => {
     try {
       const cartItems = await getCart();
       const item = cartItems.find((p) => p.productId === productId);
-      if (item) {
-        setCount(item.quantity);
-      }
+      if (item) setCount(item.quantity);
     } catch (err) {
       console.error("Failed to fetch cart", err);
     }
   };
 
-  // ✅ Add to Cart
   const handleAddToCart = async () => {
     await addToCart(productId, 1);
     setCount(1);
   };
 
-  // ✅ Increase
   const handleIncrease = async () => {
     const newCount = count + 1;
     await updateCart(productId, newCount);
     setCount(newCount);
   };
 
-  // ✅ Decrease / Remove
   const handleDecrease = async () => {
     if (count === 1) {
       await removeFromCart(productId);
@@ -108,6 +110,7 @@ console.log(data);
         <ArrowLeft size={18} /> Back to Products
       </button>
 
+      {/* Product Details */}
       <div className="grid md:grid-cols-2 gap-6 bg-white rounded-2xl shadow-lg overflow-hidden">
         {/* Media Section */}
         <div className="flex flex-col items-center p-6 bg-gray-50">
@@ -184,7 +187,6 @@ console.log(data);
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 mt-6">
             {count === 0 ? (
-              // ✅ Add to Cart
               <button
                 onClick={handleAddToCart}
                 className="flex-1 h-12 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-medium shadow hover:opacity-90 transition"
@@ -192,7 +194,6 @@ console.log(data);
                 Add to Cart
               </button>
             ) : (
-              // ✅ Counter box
               <div className="flex-1 h-12 flex items-center justify-between border border-green-500 rounded-xl px-4 bg-white transition">
                 <button
                   onClick={handleDecrease}
@@ -210,13 +211,24 @@ console.log(data);
               </div>
             )}
 
-            {/* Buy Now */}
             <button className="flex-1 h-12 border-2 border-green-500 text-green-600 rounded-xl font-medium hover:bg-green-50 transition">
               Buy Now
             </button>
           </div>
         </div>
       </div>
+
+      {/* ✅ Related Products Section */}
+      {relatedProducts.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-semibold mb-6 text-green-700">Plants you may like 🌱</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {relatedProducts.map((plant) => (
+              <PlantCard key={plant._id} plant={plant} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

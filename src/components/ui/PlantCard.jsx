@@ -5,28 +5,25 @@ import { addToCart, updateCart, removeFromCart, getCart } from "../../services/c
 
 const PlantCard = ({ plant }) => {
   const navigate = useNavigate();
-  const [count, setCount] = useState(0); // cart count for this product
+  const [count, setCount] = useState(0);
 
-  console.log(plant);
+  
   if (!plant) return null;
 
-useEffect(() => {
-  const fetchCart = async () => {
-    try {
-      const cartItems = await getCart(); // now directly an array
-      const item = cartItems.find((p) => p.productId === plant.productId);
-      if (item) {
-        setCount(item.quantity);
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const cartItems = await getCart();
+        const item = cartItems.find((p) => p.productId === plant.productId);
+        if (item) {
+          setCount(item.quantity);
+        }
+      } catch (err) {
+        console.error("Failed to fetch cart", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch cart", err);
-    }
-  };
-  fetchCart();
-}, [plant.productId]);
-
-
-  if (!plant) return null;
+    };
+    fetchCart();
+  }, [plant.productId]);
 
   const discount = Number(plant?.discount) || 0;
   const price = Number(plant?.price) || 0;
@@ -39,30 +36,74 @@ useEffect(() => {
 
   // ✅ Add to Cart
   const handleAddToCart = async () => {
-    await addToCart(plant.productId, 1);
-    setCount(1);
-  };
+  await addToCart(plant.productId, 1);
+  setCount(1);
+  window.dispatchEvent(new Event("cartUpdated")); // 🔔 notify Header
+};
 
-  // ✅ Increase Quantity
-  const handleIncrease = async () => {
-    const newCount = count + 1;
+// ✅ Increase
+const handleIncrease = async () => {
+  const newCount = count + 1;
+  await updateCart(plant.productId, newCount);
+  setCount(newCount);
+  window.dispatchEvent(new Event("cartUpdated"));
+};
+
+// ✅ Buy Now (Single Product Checkout)
+const handleBuyNow = async () => {
+  try {
+    // If product already in cart, use its count
+    const cartItems = await getCart();
+    const existingItem = cartItems.find((p) => p.productId === plant.productId);
+
+    const quantity = existingItem ? existingItem.quantity : 1;
+
+    // Only this product goes to checkout
+    const selectedItem = {
+      productId: plant.productId,
+      productName: plant.productName,
+      price: price,
+      discount: discount,
+      quantity,
+      imageUrl: plant?.imageUrl?.[0],
+      finalPrice: discount > 0 ? Math.round(price - (price * discount) / 100) : price,
+    };
+
+    // ✅ Calculate totals
+    const subtotal = selectedItem.price * selectedItem.quantity;
+    const totalDiscount = discount > 0 ? (selectedItem.price * discount * selectedItem.quantity) / 100 : 0;
+    const deliveryCharge = subtotal > 500 ? 0 : 50; // Example
+    const grandTotal = subtotal - totalDiscount + deliveryCharge;
+
+    // ✅ Navigate with ONLY this product
+    navigate("/checkout", {
+      state: {
+        cartItems: [selectedItem], // 👈 Single product only
+        subtotal,
+        totalDiscount,
+        deliveryCharge,
+        grandTotal,
+      },
+    });
+  } catch (err) {
+    console.error("Buy Now failed", err);
+  }
+};
+
+
+
+// ✅ Decrease
+const handleDecrease = async () => {
+  if (count === 1) {
+    await removeFromCart(plant.productId);
+    setCount(0);
+  } else {
+    const newCount = count - 1;
     await updateCart(plant.productId, newCount);
     setCount(newCount);
-  };
-
-  // ✅ Decrease Quantity / Remove
-  const handleDecrease = async () => {
-    if (count === 1) {
-      await removeFromCart(plant.productId);
-      setCount(0);
-    } else {
-      const newCount = count - 1;
-      await updateCart(plant.productId, newCount);
-      setCount(newCount);
-    }
-  };
-
-
+  }
+  window.dispatchEvent(new Event("cartUpdated"));
+};
   return (
     <div
       onClick={handleCardClick}
@@ -75,12 +116,18 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Wishlist + Share Icons */}
+      {/* ❤️ Wishlist + 🔗 Share */}
       <div className="absolute top-3 right-3 flex flex-col items-center space-y-2 text-gray-400 z-20">
-        <button className="p-2 bg-white rounded-full shadow hover:text-red-500 hover:scale-110 transition">
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="p-2 bg-white rounded-full shadow hover:text-red-500 hover:scale-110 transition"
+        >
           <FaHeart size={16} />
         </button>
-        <button className="p-2 bg-white rounded-full shadow hover:text-green-500 hover:scale-110 transition">
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="p-2 bg-white rounded-full shadow hover:text-green-500 hover:scale-110 transition"
+        >
           <FaShareAlt size={14} />
         </button>
       </div>
@@ -113,7 +160,7 @@ useEffect(() => {
           {plant?.productName || "Unknown Plant"}
         </h2>
 
-        {/* Rating */}
+        {/* ⭐ Rating */}
         <div className="flex items-center justify-center mt-2 space-x-1">
           {Array.from({ length: 5 }).map((_, i) => (
             <FaStar
@@ -123,7 +170,7 @@ useEffect(() => {
           ))}
         </div>
 
-        {/* Price */}
+        {/* 💰 Price */}
         <div className="flex items-center justify-center mt-3 gap-3">
           <span className="text-green-600 font-bold text-xl">₹{price}</span>
           {discount > 0 && (
@@ -131,45 +178,43 @@ useEffect(() => {
           )}
         </div>
 
-  <div className="flex flex-col sm:flex-row justify-between mt-5 gap-2 z-20 relative">
-        {count === 0 ? (
-          // ✅ Add to Cart button
-          <button
-            onClick={handleAddToCart}
-            className="flex-1 h-11 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-medium shadow hover:opacity-90 transition"
-          >
-            Add to Cart
-          </button>
-        ) : (
-          // ✅ Counter box
-          <div className="flex-1 h-11 flex items-center justify-between border border-green-500 rounded-lg px-3 bg-white transition">
-            {/* Decrease / Delete */}
+        <div className="flex flex-col sm:flex-row justify-between mt-5 gap-2 z-20 relative">
+          {count === 0 ? (
             <button
-              onClick={handleDecrease}
-              className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+              onClick={handleAddToCart}
+              className="flex-1 h-11 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-medium shadow hover:opacity-90 transition"
             >
-              {count === 1 ? <FaTrash size={14} /> : "-"}
+              Add to Cart
             </button>
+          ) : (
+            <div className="flex-1 h-11 flex items-center justify-between border border-green-500 rounded-lg px-3 bg-white transition">
+              <button
+                onClick={handleDecrease}
+                className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+              >
+                {count === 1 ? <FaTrash size={14} /> : "-"}
+              </button>
+              <span className="font-semibold text-green-700">{count}</span>
+              <button
+                onClick={handleIncrease}
+                className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-md hover:bg-green-600 transition"
+              >
+                +
+              </button>
+            </div>
+          )}
 
-            {/* Count */}
-            <span className="font-semibold text-green-700">{count}</span>
+         <button
+  onClick={(e) => {
+    e.stopPropagation();
+    handleBuyNow();
+  }}
+  className="flex-1 h-11 border border-green-500 text-green-600 bg-white rounded-lg font-medium hover:bg-green-50 transition"
+>
+  Buy Now
+</button>
 
-            {/* Increase */}
-            <button
-              onClick={handleIncrease}
-              className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-md hover:bg-green-600 transition"
-            >
-              +
-            </button>
-          </div>
-        )}
-
-        {/* ✅ Buy Now button */}
-        <button className="flex-1 h-11 border border-green-500 text-green-600 bg-white rounded-lg font-medium hover:bg-green-50 transition">
-          Buy Now
-        </button>
-      </div>
-
+        </div>
       </div>
     </div>
   );

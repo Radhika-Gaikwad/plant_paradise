@@ -12,8 +12,10 @@ import {
   verifyPaymentOrder,
   placeOrder,
 } from "../../services/orderService";
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import PaymentPopup from "../../components/ui/PaymentPopup";
-import {showToast} from "../../utils/showToast";
+import { showToast } from "../../utils/showToast";
 
 
 const currency = (v) => `₹${v?.toLocaleString?.() ?? v}`;
@@ -21,6 +23,7 @@ const currency = (v) => `₹${v?.toLocaleString?.() ?? v}`;
 export default function CheckoutPage() {
   const location = useLocation();
   const navigate = useNavigate();
+
 
   const {
     cartItems = [],
@@ -34,8 +37,8 @@ export default function CheckoutPage() {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [items, setItems] = useState(cartItems);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-const [showPaymentPopup, setShowPaymentPopup] = useState(false);
-const [processingStep, setProcessingStep] = useState(null); 
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+  const [processingStep, setProcessingStep] = useState(null);
   // fetch addresses
   useEffect(() => {
     async function fetchAddresses() {
@@ -63,231 +66,225 @@ const [processingStep, setProcessingStep] = useState(null);
   };
 
 
-// inside CheckoutPage component (replace existing helpers)
+  // inside CheckoutPage component (replace existing helpers)
 
-const buildProductsPayload = (itemsList) => {
-  // Convert whatever shape you have into [{ productId, quantity }]
-  return itemsList.map((it) => {
-    // find product id (many possible shapes)
-    const productId =
-      it.productId ??
-      it._id ??
-      it.product?._id ??
-      it.product?.productId ??
-      it.product?.id ??
-      null;
+  const buildProductsPayload = (itemsList) => {
+    // Convert whatever shape you have into [{ productId, quantity }]
+    return itemsList.map((it) => {
+      // find product id (many possible shapes)
+      const productId =
+        it.productId ??
+        it._id ??
+        it.product?._id ??
+        it.product?.productId ??
+        it.product?.id ??
+        null;
 
-    // find cart quantity (prefer quantity from cart, not product.available stock)
-    const quantity = Number(
-      it.quantity ?? it.qty ?? it.cartQuantity ?? it.count ?? it.quantityInCart ?? 0
+      // find cart quantity (prefer quantity from cart, not product.available stock)
+      const quantity = Number(
+        it.quantity ?? it.qty ?? it.cartQuantity ?? it.count ?? it.quantityInCart ?? 0
+      );
+
+      return { productId, quantity, raw: it };
+    });
+  };
+
+  const extractOrderIdFromResponse = (res) => {
+    // order service returns 'data' object (see orderService), try common fields
+    if (!res) return null;
+    return (
+      res.orderId ||
+      res.order?.orderId ||
+      res._id ||
+      res.data?.orderId ||
+      res.data?.order?.orderId ||
+      null
     );
+  };
 
-    return { productId, quantity, raw: it };
-  });
-};
+  const handlePayOnline = async (method) => {
+    try {
+      // quick validations
+      if (!selectedAddress) {
+        toast.error("Please select a delivery address");
+        return;
+      }
+      if (!items || items.length === 0) {
+        toast.errort("Your cart is empty");
+        return;
+      }
 
-const extractOrderIdFromResponse = (res) => {
-  // order service returns 'data' object (see orderService), try common fields
-  if (!res) return null;
-  return (
-    res.orderId ||
-    res.order?.orderId ||
-    res._id ||
-    res.data?.orderId ||
-    res.data?.order?.orderId ||
-    null
-  );
-};
+      // Build normalized products payload
+      const mapped = buildProductsPayload(items);
+      // validate productId and quantity
+      const bad = mapped.find((p) => !p.productId || p.quantity <= 0);
+      if (bad) {
+        toast.error("One or more cart items are invalid. Please refresh your cart.");
+        return;
+      }
 
-const handlePayOnline = async (method) => {
-  try {
-    // quick validations
-    if (!selectedAddress) {
-      showToast("Please select a delivery address", "error");
-      return;
+      // optional: client-side stock check (if product objects include stock/availableStock)
+      const stockIssue = mapped.find((p) => {
+        const raw = p.raw;
+        const available =
+          raw.availableStock ?? raw.stock ?? raw.inventory ?? raw.qtyAvailable ?? null;
+        return available !== null && typeof available === "number" && p.quantity > available;
+      });
+      if (stockIssue) {
+        const name = stockIssue.raw.productName ?? stockIssue.raw.name ?? "One item";
+        toast.error(`${name} does not have enough stock. Reduce quantity.`);
+        return;
+      }
+
+      // STEP 1: Create payment order on backend
+      setProcessingStep("initiating");
+      const paymentInit = await createPaymentOrder(updatedGrandTotal);
+      if (!paymentInit?.clientPayload) {
+        throw new Error("Payment initialization failed");
+      }
+
+      // STEP 2: Verifying
+      setProcessingStep("verifying");
+      const verifyPayload = {
+        clientPayload: {
+          paymentId: paymentInit.clientPayload.paymentId,
+          orderId: paymentInit.clientPayload.orderId,
+          amount: paymentInit.clientPayload.amount,
+          currency: paymentInit.clientPayload.currency,
+          receipt: paymentInit.clientPayload.receipt,
+        },
+        signature: paymentInit.serverSignature,
+      };
+      const verifyRes = await verifyPaymentOrder(verifyPayload);
+      if (!verifyRes?.success) {
+        // backend sends a helpful message usually
+        const msg = verifyRes?.message || "Payment verification failed";
+        throw new Error(msg);
+      }
+
+      // STEP 3: Placing order
+      setProcessingStep("placing");
+      const selectedAddrObj = addresses.find((a) => a._id === selectedAddress);
+      if (!selectedAddrObj) throw new Error("No address selected");
+
+      const productsForOrder = mapped.map((p) => ({
+        productId: p.productId,
+        quantity: p.quantity,
+      }));
+
+      const orderBody = {
+        user: {
+          email: "radhikag.1357@gmail.com",
+          username: "Radhika Gaikwad",
+        },
+        products: productsForOrder,
+        address: {
+          name: selectedAddrObj.name,
+          phoneNo: selectedAddrObj.phoneNo,
+          city: selectedAddrObj.city,
+          pincode: selectedAddrObj.pincode,
+        },
+        paymentMode: "ONLINE",
+        paymentMethod: method,
+        paymentPayload: paymentInit.clientPayload,
+        paymentSignature: paymentInit.serverSignature,
+        // optionally include a client-side order summary to help backend logs:
+        clientSummary: {
+          subtotal: updatedSubtotal,
+          deliveryCharge,
+          grandTotal: updatedGrandTotal,
+        },
+      };
+
+      const placeRes = await placeOrder(orderBody);
+
+      // success => clear processing and show success
+      setProcessingStep(null);
+      navigate("/orders")
+      const orderId = placeRes?.orderId || extractOrderIdFromResponse(placeRes);
+      if (orderId) {
+        navigate(`/orders/${orderId}`);
+      } else {
+        navigate("/orders"); // fallback if no id
+      }
+    } catch (err) {
+      console.error("Payment failed:", err);
+      setProcessingStep(null);
+
+      // show error from backend if available
+      const message =
+        err?.response?.data?.message ?? err?.message ?? "Payment / Order failed. Please try again.";
+      toast.error(message);
     }
-    if (!items || items.length === 0) {
-      showToast("Your cart is empty", "error");
-      return;
+  };
+
+
+  const handleCOD = async () => {
+    try {
+      if (!selectedAddress) {
+        toast.error("Please select a delivery address");
+        return;
+      }
+      if (!items || items.length === 0) {
+        toast.error("Your cart is empty");
+        return;
+      }
+
+      const mapped = buildProductsPayload(items);
+      const bad = mapped.find((p) => !p.productId || p.quantity <= 0);
+      if (bad) {
+        toast.error("One or more cart items are invalid. Please refresh your cart.");
+        return;
+      }
+
+      // optional stock check
+      const stockIssue = mapped.find((p) => {
+        const raw = p.raw;
+        const available =
+          raw.availableStock ?? raw.stock ?? raw.inventory ?? raw.qtyAvailable ?? null;
+        return available !== null && typeof available === "number" && p.quantity > available;
+      });
+      if (stockIssue) {
+        const name = stockIssue.raw.productName ?? stockIssue.raw.name ?? "One item";
+        toast.error(`${name} does not have enough stock. Reduce quantity.`);
+        return;
+      }
+
+      setProcessingStep("placing");
+      const selectedAddrObj = addresses.find((a) => a._id === selectedAddress);
+
+      const productsForOrder = mapped.map((p) => ({ productId: p.productId, quantity: p.quantity }));
+
+      const orderBody = {
+        user: { email: "radhikag.1357@gmail.com", username: "Radhika Gaikwad" },
+        products: productsForOrder,
+        address: {
+          name: selectedAddrObj.name,
+          phoneNo: selectedAddrObj.phoneNo,
+          city: selectedAddrObj.city,
+          pincode: selectedAddrObj.pincode,
+        },
+        paymentMode: "COD",
+      };
+
+      const placeRes = await placeOrder(orderBody);
+
+      setProcessingStep(null);
+      navigate("/orders")
+      const orderId = extractOrderIdFromResponse(placeRes);
+      if (orderId) {
+        navigate(`/orders/${orderId}`);
+      } else {
+        navigate("/orders");
+      }
+    } catch (err) {
+      console.error("COD create failed:", err);
+      setProcessingStep(null);
+      const message =
+        err?.response?.data?.message ?? err?.message ?? "COD order failed. Please try again.";
+      toast.error(message);
     }
-
-    // Build normalized products payload
-    const mapped = buildProductsPayload(items);
-    // validate productId and quantity
-    const bad = mapped.find((p) => !p.productId || p.quantity <= 0);
-    if (bad) {
-      showToast("One or more cart items are invalid. Please refresh your cart.", "error");
-      return;
-    }
-
-    // optional: client-side stock check (if product objects include stock/availableStock)
-    const stockIssue = mapped.find((p) => {
-      const raw = p.raw;
-      const available =
-        raw.availableStock ?? raw.stock ?? raw.inventory ?? raw.qtyAvailable ?? null;
-      return available !== null && typeof available === "number" && p.quantity > available;
-    });
-    if (stockIssue) {
-      const name = stockIssue.raw.productName ?? stockIssue.raw.name ?? "One item";
-      showToast(`${name} does not have enough stock. Reduce quantity.`, "error");
-      return;
-    }
-
-    // STEP 1: Create payment order on backend
-    setProcessingStep("initiating");
-    const paymentInit = await createPaymentOrder(updatedGrandTotal);
-    if (!paymentInit?.clientPayload) {
-      throw new Error("Payment initialization failed");
-    }
-
-    // STEP 2: Verifying
-    setProcessingStep("verifying");
-    const verifyPayload = {
-      clientPayload: {
-        paymentId: paymentInit.clientPayload.paymentId,
-        orderId: paymentInit.clientPayload.orderId,
-        amount: paymentInit.clientPayload.amount,
-        currency: paymentInit.clientPayload.currency,
-        receipt: paymentInit.clientPayload.receipt,
-      },
-      signature: paymentInit.serverSignature,
-    };
-    const verifyRes = await verifyPaymentOrder(verifyPayload);
-    if (!verifyRes?.success) {
-      // backend sends a helpful message usually
-      const msg = verifyRes?.message || "Payment verification failed";
-      throw new Error(msg);
-    }
-
-    // STEP 3: Placing order
-    setProcessingStep("placing");
-    const selectedAddrObj = addresses.find((a) => a._id === selectedAddress);
-    if (!selectedAddrObj) throw new Error("No address selected");
-
-    const productsForOrder = mapped.map((p) => ({
-      productId: p.productId,
-      quantity: p.quantity,
-    }));
-
-    const orderBody = {
-      user: {
-        email: "radhikag.1357@gmail.com",
-        username: "Radhika Gaikwad",
-      },
-      products: productsForOrder,
-      address: {
-        name: selectedAddrObj.name,
-        phoneNo: selectedAddrObj.phoneNo,
-        city: selectedAddrObj.city,
-        pincode: selectedAddrObj.pincode,
-      },
-      paymentMode: "ONLINE",
-      paymentMethod: method,
-      paymentPayload: paymentInit.clientPayload,
-      paymentSignature: paymentInit.serverSignature,
-      // optionally include a client-side order summary to help backend logs:
-      clientSummary: {
-        subtotal: updatedSubtotal,
-        deliveryCharge,
-        grandTotal: updatedGrandTotal,
-      },
-    };
-
-    const placeRes = await placeOrder(orderBody);
-
-    // success => clear processing and show success
-    setProcessingStep(null);
-    showToast("✅ Order Placed Successfully 🎉", "success");
-navigate("/orders")
-    // optional: clear local cart / context so next checkout doesn't reuse old values
-    // if you have a cart service: await clearCart(); or dispatch({ type: "CLEAR_CART" });
-    // localStorage.removeItem("cart"); // if you store cart in localStorage
-
- const orderId = placeRes?.orderId || extractOrderIdFromResponse(placeRes);
-if (orderId) {
-  navigate(`/orders/${orderId}`);
-} else {
-  navigate("/orders"); // fallback if no id
-}
-  } catch (err) {
-    console.error("Payment failed:", err);
-    setProcessingStep(null);
-
-    // show error from backend if available
-    const message =
-      err?.response?.data?.message ?? err?.message ?? "Payment / Order failed. Please try again.";
-    showToast(message, "error");
-  }
-};
-
-
-const handleCOD = async () => {
-  try {
-    if (!selectedAddress) {
-      showToast("Please select a delivery address", "error");
-      return;
-    }
-    if (!items || items.length === 0) {
-      showToast("Your cart is empty", "error");
-      return;
-    }
-
-    const mapped = buildProductsPayload(items);
-    const bad = mapped.find((p) => !p.productId || p.quantity <= 0);
-    if (bad) {
-      showToast("One or more cart items are invalid. Please refresh your cart.", "error");
-      return;
-    }
-
-    // optional stock check
-    const stockIssue = mapped.find((p) => {
-      const raw = p.raw;
-      const available =
-        raw.availableStock ?? raw.stock ?? raw.inventory ?? raw.qtyAvailable ?? null;
-      return available !== null && typeof available === "number" && p.quantity > available;
-    });
-    if (stockIssue) {
-      const name = stockIssue.raw.productName ?? stockIssue.raw.name ?? "One item";
-      showToast(`${name} does not have enough stock. Reduce quantity.`, "error");
-      return;
-    }
-
-    setProcessingStep("placing");
-    const selectedAddrObj = addresses.find((a) => a._id === selectedAddress);
-
-    const productsForOrder = mapped.map((p) => ({ productId: p.productId, quantity: p.quantity }));
-
-    const orderBody = {
-      user: { email: "radhikag.1357@gmail.com", username: "Radhika Gaikwad" },
-      products: productsForOrder,
-      address: {
-        name: selectedAddrObj.name,
-        phoneNo: selectedAddrObj.phoneNo,
-        city: selectedAddrObj.city,
-        pincode: selectedAddrObj.pincode,
-      },
-      paymentMode: "COD",
-    };
-
-    const placeRes = await placeOrder(orderBody);
-
-    setProcessingStep(null);
-    showToast("✅ Order Placed Successfully (COD) 🎉", "success");
-
-const orderId = placeRes?.orderId || extractOrderIdFromResponse(placeRes);
-if (orderId) {
-  navigate(`/orders/${orderId}`);
-} else {
-  navigate("/orders"); // fallback if no id
-}
-  } catch (err) {
-    console.error("COD create failed:", err);
-    setProcessingStep(null);
-    const message =
-      err?.response?.data?.message ?? err?.message ?? "COD order failed. Please try again.";
-    showToast(message, "error");
-  }
-};
+  };
 
   // Navigate to Address page for add / edit
   const goToAddAddress = () => {
@@ -327,9 +324,8 @@ if (orderId) {
               {addresses.map((addr) => (
                 <div
                   key={addr._id}
-                  className={`relative p-4 border rounded-xl cursor-pointer transition ${
-                    selectedAddress === addr._id ? "border-green-600 bg-green-50" : "border-gray-300"
-                  }`}
+                  className={`relative p-4 border rounded-xl cursor-pointer transition ${selectedAddress === addr._id ? "border-green-600 bg-green-50" : "border-gray-300"
+                    }`}
                   onClick={() => setSelectedAddress(addr._id)}
                 >
                   <div className="absolute top-2 right-2 flex gap-2">
@@ -430,23 +426,23 @@ if (orderId) {
             Place Order
           </button>
 
-         {showPaymentOptions && (
-  <div className="mt-4 space-y-2">
-    <button
-     onClick={() => setShowPaymentPopup(true)}
+          {showPaymentOptions && (
+            <div className="mt-4 space-y-2">
+              <button
+                onClick={() => setShowPaymentPopup(true)}
 
-      className="w-full px-4 py-2 border rounded-xl hover:bg-gray-50"
-    >
-      Pay Online
-    </button>
-    <button
-      onClick={handleCOD}
-      className="w-full px-4 py-2 border rounded-xl hover:bg-gray-50"
-    >
-      Cash on Delivery
-    </button>
-  </div>
-)}
+                className="w-full px-4 py-2 border rounded-xl hover:bg-gray-50"
+              >
+                Pay Online
+              </button>
+              <button
+                onClick={handleCOD}
+                className="w-full px-4 py-2 border rounded-xl hover:bg-gray-50"
+              >
+                Cash on Delivery
+              </button>
+            </div>
+          )}
 
         </div>
 
@@ -477,27 +473,26 @@ if (orderId) {
           </div>
         </div>
       </aside>
-{showPaymentPopup && (
-  <PaymentPopup
-    amount={updatedGrandTotal}
-    onClose={() => setShowPaymentPopup(false)}
-    onConfirm={async (method) => {
-      setShowPaymentPopup(false);
-      await handlePayOnline(method);
-    }}
-  />
-)}
+      {showPaymentPopup && (
+        <PaymentPopup
+          amount={updatedGrandTotal}
+          onClose={() => setShowPaymentPopup(false)}
+          onConfirm={async (method) => {
+            setShowPaymentPopup(false);
+            await handlePayOnline(method);
+          }}
+        />
+      )}
 
-{processingStep === "verifying" && (
-  <ProcessingPopup message="Verifying Payment..." />
-)}
+      {processingStep === "verifying" && (
+        <ProcessingPopup message="Verifying Payment..." />
+      )}
 
-{processingStep === "placing" && (
-  <ProcessingPopup message="Placing Your Order..." />
-)}
+      {processingStep === "placing" && (
+        <ProcessingPopup message="Placing Your Order..." />
+      )}
 
 
-</div>
+    </div>
   );
 }
-              

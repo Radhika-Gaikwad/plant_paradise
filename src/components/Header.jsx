@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaHeart, FaShoppingCart, FaBars, FaTimes, FaUserCircle } from "react-icons/fa";
+import {
+  FaHeart,
+  FaShoppingCart,
+  FaBars,
+  FaTimes,
+  FaUserCircle,
+  FaUser,
+  FaKey,
+  FaSignOutAlt,
+} from "react-icons/fa";
 import { GiPlantRoots } from "react-icons/gi";
-import { FaUser, FaKey, FaSignOutAlt } from "react-icons/fa";
-import LogoutConfirm from "../features/authentication/LogoutConfirm";
+import { getCart } from "../services/cartService"; // ✅ import cart service
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -13,26 +21,58 @@ const navItems = [
   { name: "Orders", path: "/orders" },
 ];
 
+
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0); // ✅ cart state
+
   const navigate = useNavigate();
 
-  // Check login status
+  // ✅ Fetch cart count from backend
+  const fetchCartCount = async () => {
+    try {
+      const cart = await getCart();
+      const count = cart.reduce((acc, item) => acc + (item.quantity || 1), 0);
+      setCartCount(count);
+    } catch (error) {
+      console.error("Failed to fetch cart:", error);
+      setCartCount(0);
+    }
+  };
+
+  // ✅ Load user + cart once, and listen for updates
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
+
+    fetchCartCount();
+
+    // 🔔 Listen for cart updates
+    const handleCartUpdated = () => {
+      fetchCartCount();
+    };
+
+    window.addEventListener("cartUpdated", handleCartUpdated);
+
+    return () => {
+      window.removeEventListener("cartUpdated", handleCartUpdated);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("token"); // ✅ clear token too
     setUser(null);
+    setCartCount(0);
     navigate("/login");
   };
 
-  const gradientText = "bg-gradient-to-r from-green-900 via-green-700 to-green-900";
-  const gradientBtn = "bg-gradient-to-r from-green-900 via-green-700 to-green-900 bg-[length:200%_200%] animate-gradientMove";
+  const gradientText =
+    "bg-gradient-to-r from-green-900 via-green-700 to-green-900";
+  const gradientBtn =
+    "bg-gradient-to-r from-green-900 via-green-700 to-green-900 bg-[length:200%_200%] animate-gradientMove";
 
   return (
     <motion.header
@@ -77,6 +117,7 @@ const Header = () => {
 
         {/* Right Icons */}
         <div className="flex items-center space-x-4 md:space-x-6 text-lg md:text-xl">
+          {/* Wishlist (static for now) */}
           <Link to="/wishlist" className="relative hover:opacity-80">
             <FaHeart className="text-green-900" />
             <span className="absolute -top-2 -right-2 bg-pink-600 text-xs w-4 h-4 flex items-center justify-center rounded-full text-white">
@@ -84,11 +125,14 @@ const Header = () => {
             </span>
           </Link>
 
+          {/* Cart with live count */}
           <Link to="/cart" className="relative hover:opacity-80">
             <FaShoppingCart className="text-green-900" />
-            <span className="absolute -top-2 -right-2 bg-yellow-600 text-xs w-4 h-4 flex items-center justify-center rounded-full text-white">
-              5
-            </span>
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-yellow-600 text-xs w-5 h-5 flex items-center justify-center rounded-full text-white">
+                {cartCount}
+              </span>
+            )}
           </Link>
 
           {/* User Dropdown */}
@@ -100,44 +144,44 @@ const Header = () => {
             >
               <button className="flex items-center space-x-2 focus:outline-none">
                 <FaUserCircle className="text-green-900 text-2xl" />
-                <span className="font-medium text-green-900">{user.name || "User"}</span>
+                <span className="font-medium text-green-900">
+                  {user.name || "User"}
+                </span>
               </button>
 
               {/* Dropdown Menu */}
               <AnimatePresence>
-  {dropdownOpen && (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="absolute right-0 mt-2 w-44 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl border border-green-200 overflow-hidden z-50"
-    >
-       <Link
-            to="/profile"
-            className="flex items-center px-4 py-2 text-green-700 text-sm hover:text-black hover:bg-green-100 transition-all duration-300 space-x-2"
-          >
-            <FaUser className="text-green-700" />
-            <span>Profile</span>
-          </Link>
-      <Link
-        to="/reset-password"
-        className="flex items-center px-4 py-2 text-green-700 text-sm hover:text-black hover:bg-green-100 transition-all duration-300 space-x-2"
-      >
-        <FaKey className="text-green-700" />
-        <span>Reset Password</span>
-      </Link>
-      <button
-       onClick={() => navigate("/logout-confirm")}
-       className="flex items-center w-full text-left px-4 py-2 text-green-700 text-sm hover:text-black hover:bg-green-100 transition-all duration-300 space-x-2"
-      >
-      <FaSignOutAlt className="text-green-700" />
-      <span>Logout</span>
-      </button>
-
-    </motion.div>
-  )}
-</AnimatePresence>
-
+                {dropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute right-0 mt-2 w-44 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl border border-green-200 overflow-hidden z-50"
+                  >
+                    <Link
+                      to="/profile"
+                      className="flex items-center px-4 py-2 text-green-700 text-sm hover:text-black hover:bg-green-100 transition-all duration-300 space-x-2"
+                    >
+                      <FaUser className="text-green-700" />
+                      <span>Profile</span>
+                    </Link>
+                    <Link
+                      to="/reset-password"
+                      className="flex items-center px-4 py-2 text-green-700 text-sm hover:text-black hover:bg-green-100 transition-all duration-300 space-x-2"
+                    >
+                      <FaKey className="text-green-700" />
+                      <span>Reset Password</span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center w-full text-left px-4 py-2 text-green-700 text-sm hover:text-black hover:bg-green-100 transition-all duration-300 space-x-2"
+                    >
+                      <FaSignOutAlt className="text-green-700" />
+                      <span>Logout</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <Link
@@ -188,6 +232,3 @@ const Header = () => {
 };
 
 export default Header;
-
-
-

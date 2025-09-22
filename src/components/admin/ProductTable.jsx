@@ -300,9 +300,10 @@ const ProductTable = () => {
 
 
   <div className="grid gap-4 md:hidden">
-    {products.map((product, i) => (
+    {products.map((product) => (
       <div
-        key={product._id || i}
+        //key={product._id || i}
+         key={product.productId}
         className="border rounded-xl p-4 shadow bg-white flex flex-col gap-4"
       >
         {/* Header */}
@@ -313,7 +314,7 @@ const ProductTable = () => {
           </span>
         </div>
         <p className="text-sm text-gray-600">
-          {product.category} / {product.subCategory}
+          {product.categoryName} / {product.subCategoryName}
         </p>
 
         {/* Images */}

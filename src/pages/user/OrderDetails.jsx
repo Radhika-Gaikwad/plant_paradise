@@ -144,9 +144,11 @@ const OrderDetails = () => {
         </h2>
         {order.address[0] && (
           <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
-            {order.address[0].name}, {order.address[0].street},{" "}
+           {/* {order.address[0].name}, {order.address[0].street},{" "}
             {order.address[0].city} - {order.address[0].pincode},{" "}
-            {order.address[0].state}
+            {order.address[0].state}*/}
+            {order.address[0].name}, {order.address[0].houseNo}, {order.address[0].streetName},{" "}
+            {order.address[0].city}, {order.address[0].district} - {order.address[0].pincode}
           </p>
         )}
       </div>

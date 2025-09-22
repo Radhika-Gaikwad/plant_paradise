@@ -14,7 +14,8 @@ import {
 // - Expects the service functions (getCart, updateCart, removeFromCart, addToCart)
 // - Replace toast/notification with your project's helpers if needed
 
-const currency = (v) => `₹${v.toLocaleString()}`;
+//const currency = (v) => `₹${v.toLocaleString()}`;
+const currency = (v) => `₹${(v ?? 0).toLocaleString("en-IN")}`;
 
 export default function CartPage() {
   const [items, setItems] = useState([]);
@@ -38,7 +39,7 @@ export default function CartPage() {
     }
   };
 
-  const changeQuantity = async (productId, newQty) => {
+  /*const changeQuantity = async (productId, newQty) => {
     if (newQty < 1) return;
     try {
       setUpdating(true);
@@ -64,6 +65,36 @@ export default function CartPage() {
       setUpdating(false);
     }
   };
+  */
+    const changeQuantity = async (productId, newQty) => {
+    if (newQty < 1) return;
+    try {
+      setUpdating(true);
+      await updateCart(productId, newQty);
+      setItems((prev) =>
+        prev.map((it) => (it.productId === productId ? { ...it, quantity: newQty } : it))
+      );
+      window.dispatchEvent(new Event("cartUpdated")); // 🔔 notify header
+    } catch (err) {
+      console.error("update failed", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleRemove = async (productId) => {
+    try {
+      setUpdating(true);
+      await removeFromCart(productId);
+      setItems((prev) => prev.filter((p) => p.productId !== productId));
+      window.dispatchEvent(new Event("cartUpdated")); // 🔔 notify header
+    } catch (err) {
+      console.error("remove failed", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
 
   const handleBuyNow = async (product) => {
     // For Buy Now we'll add single product to a temporary checkout or navigate to checkout

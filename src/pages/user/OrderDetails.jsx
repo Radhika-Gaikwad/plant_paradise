@@ -1,6 +1,6 @@
 // src/pages/OrderDetails.jsx
 import React, { useEffect, useState } from "react";
-import { getMyOrders } from "../../services/orderService";
+import { getMyOrders, getOrderById} from "../../services/orderService";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Package,
@@ -26,13 +26,25 @@ const OrderDetails = () => {
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
 
-  useEffect(() => {
+ /* useEffect(() => {
     const fetchOrder = async () => {
       const orders = await getMyOrders();
       const found = orders.find((o) => o._orderId === id);
       setOrder(found || null);
     };
     fetchOrder();
+  }, [id]);*/
+    useEffect(() => {
+    const fetchOrder = async () => {
+    try {
+      const data = await getOrderById(id); // fetch the order directly
+      setOrder(data);
+    } catch (error) {
+      console.error(error);
+      setOrder(null);
+    }
+    };
+     fetchOrder();
   }, [id]);
 
   if (!order) return <p className="p-6 text-center">Loading...</p>;
@@ -131,9 +143,10 @@ const OrderDetails = () => {
             {order.paymentMode})
           </p>
           <p>
-            <span className="font-medium">Total:</span> ₹
-            {order.totalPrice.toFixed(2)}
-          </p>
+  <span className="font-medium">Total:</span> ₹
+  {order?.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}
+</p>
+
         </div>
       </div>
 
@@ -142,42 +155,41 @@ const OrderDetails = () => {
         <h2 className="font-semibold mb-3 flex items-center text-lg">
           <MapPin className="w-5 h-5 mr-2 text-green-600" /> Shipping Address
         </h2>
-        {order.address[0] && (
-          <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
-           {/* {order.address[0].name}, {order.address[0].street},{" "}
-            {order.address[0].city} - {order.address[0].pincode},{" "}
-            {order.address[0].state}*/}
-            {order.address[0].name}, {order.address[0].houseNo}, {order.address[0].streetName},{" "}
-            {order.address[0].city}, {order.address[0].district} - {order.address[0].pincode}
-          </p>
-        )}
+      {Array.isArray(order?.address) && order.address.length > 0 && (
+  <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
+    {order.address[0].name}, {order.address[0].houseNo}, {order.address[0].streetName},{" "}
+    {order.address[0].city}, {order.address[0].district} - {order.address[0].pincode}
+  </p>
+)}
+
       </div>
 
       {/* Products */}
       <div className="bg-white shadow rounded-xl p-5">
         <h2 className="font-semibold mb-3 text-lg">Products</h2>
         <div className="divide-y">
-          {order.products.map((p) => (
-            <div
-              key={p.productId}
-              className="flex flex-col sm:flex-row sm:items-center gap-4 py-4"
-            >
-              <img
-                src={p.imageUrl}
-                alt={p.productName}
-                className="w-20 h-20 object-cover rounded-lg"
-              />
-              <div className="flex-1">
-                <p className="font-medium text-sm sm:text-base">{p.productName}</p>
-                <p className="text-xs sm:text-sm text-gray-500">
-                  Qty: {p.quantity} × ₹{p.price}
-                </p>
-              </div>
-              <p className="font-semibold text-sm sm:text-base">
-                ₹{p.price * p.quantity}
-              </p>
-            </div>
-          ))}
+      {Array.isArray(order?.products) && order.products.map((p) => (
+  <div
+    key={p.productId}
+    className="flex flex-col sm:flex-row sm:items-center gap-4 py-4"
+  >
+    <img
+      src={p.imageUrl}
+      alt={p.productName}
+      className="w-20 h-20 object-cover rounded-lg"
+    />
+    <div className="flex-1">
+      <p className="font-medium text-sm sm:text-base">{p.productName}</p>
+      <p className="text-xs sm:text-sm text-gray-500">
+        Qty: {p.quantity} × ₹{p.price}
+      </p>
+    </div>
+    <p className="font-semibold text-sm sm:text-base">
+      ₹{(p.price || 0) * (p.quantity || 0)}
+    </p>
+  </div>
+))}
+
         </div>
       </div>
 

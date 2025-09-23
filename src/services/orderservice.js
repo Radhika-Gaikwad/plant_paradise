@@ -67,7 +67,21 @@ export const getMyOrders = async () => {
     );
     return data.orders || [];
   } catch (error) {
-    showToast(error.response?.data?.message || "Failed to fetch orders", "error");
+    // showToast(error.response?.data?.message || "Failed to fetch orders", "error");
+    throw error;
+  }
+};
+
+// ✅ New: Get single order by ID
+export const getOrderById = async (id) => {
+  try {
+    const { data } = await axiosInstance.get(
+      `orders/order/${id}`,
+      getAuthHeaders()
+    );
+    return data.order; // assuming backend sends { order: {...} }
+  } catch (error) {
+    // showToast(error.response?.data?.message || "Order not found", "error");
     throw error;
   }
 };

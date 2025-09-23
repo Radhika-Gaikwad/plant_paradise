@@ -172,29 +172,34 @@ export default function CheckoutPage() {
         quantity: p.quantity,
       }));
 
-      const orderBody = {
-        user: {
-          email: "radhikag.1357@gmail.com",
-          username: "Radhika Gaikwad",
-        },
-        products: productsForOrder,
-        address: {
-          name: selectedAddrObj.name,
-          phoneNo: selectedAddrObj.phoneNo,
-          city: selectedAddrObj.city,
-          pincode: selectedAddrObj.pincode,
-        },
-        paymentMode: "ONLINE",
-        paymentMethod: method,
-        paymentPayload: paymentInit.clientPayload,
-        paymentSignature: paymentInit.serverSignature,
-        // optionally include a client-side order summary to help backend logs:
-        clientSummary: {
-          subtotal: updatedSubtotal,
-          deliveryCharge,
-          grandTotal: updatedGrandTotal,
-        },
-      };
+     // get user from localStorage
+const storedUser = JSON.parse(localStorage.getItem("user"));
+
+// build order body dynamically
+const orderBody = { 
+  user: {
+    email: storedUser?.email,      // dynamic email
+    username: storedUser?.name,    // dynamic name
+    userId: storedUser?.userId,    // optional if needed in backend
+    role: storedUser?.role         // optional if needed
+  },
+  products: productsForOrder,
+  address: {
+    name: selectedAddrObj.name,
+    phoneNo: selectedAddrObj.phoneNo,
+    city: selectedAddrObj.city,
+    pincode: selectedAddrObj.pincode,
+  },
+  paymentMode: "ONLINE",
+  paymentMethod: method,
+  paymentPayload: paymentInit.clientPayload,
+  paymentSignature: paymentInit.serverSignature,
+  clientSummary: {
+    subtotal: updatedSubtotal,
+    deliveryCharge,
+    grandTotal: updatedGrandTotal,
+  },
+};
 
       const placeRes = await placeOrder(orderBody);
 
@@ -255,17 +260,27 @@ export default function CheckoutPage() {
 
       const productsForOrder = mapped.map((p) => ({ productId: p.productId, quantity: p.quantity }));
 
-      const orderBody = {
-        user: { email: "radhikag.1357@gmail.com", username: "Radhika Gaikwad" },
-        products: productsForOrder,
-        address: {
-          name: selectedAddrObj.name,
-          phoneNo: selectedAddrObj.phoneNo,
-          city: selectedAddrObj.city,
-          pincode: selectedAddrObj.pincode,
-        },
-        paymentMode: "COD",
-      };
+ // get user from localStorage
+const storedUser = JSON.parse(localStorage.getItem("user"));
+
+// build order body dynamically
+const orderBody = { 
+  user: { 
+    email: storedUser?.email,      // dynamic email
+    username: storedUser?.name,    // dynamic username
+    userId: storedUser?.userId,    // optional if backend needs
+    role: storedUser?.role         // optional if backend needs
+  },
+  products: productsForOrder,
+  address: {
+    name: selectedAddrObj.name,
+    phoneNo: selectedAddrObj.phoneNo,
+    city: selectedAddrObj.city,
+    pincode: selectedAddrObj.pincode,
+  },
+  paymentMode: "COD",
+};
+
 
       const placeRes = await placeOrder(orderBody);
 

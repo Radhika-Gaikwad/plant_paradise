@@ -7,7 +7,7 @@ const AdminProducts = () => {
   const [showForm, setShowForm] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 h-full">
       {/* ---------- Header ---------- */}
       <div className="bg-white shadow-md rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between">
         <div>

@@ -74,16 +74,56 @@ const PlantCard = ({ plant }) => {
     }
   };
 
-  const handleIncrease = async () => {
-    try {
-      const newCount = count + 1;
-      await updateCart(plant.productId, newCount);
-      setCount(newCount);
-      window.dispatchEvent(new Event("cartUpdated"));
-    } catch {
-      toast.error("Failed to update cart");
-    }
-  };
+// ✅ Increase
+const handleIncrease = async () => {
+  const newCount = count + 1;
+  await updateCart(plant.productId, newCount);
+  setCount(newCount);
+  window.dispatchEvent(new Event("cartUpdated"));
+};
+
+// ✅ Buy Now (Single Product Checkout)
+const handleBuyNow = async () => {
+  try {
+    // If product already in cart, use its count
+    const cartItems = await getCart();
+    const existingItem = cartItems.find((p) => p.productId === plant.productId);
+
+    const quantity = existingItem ? existingItem.quantity : 1;
+
+    // Only this product goes to checkout
+    const selectedItem = {
+      productId: plant.productId,
+      productName: plant.productName,
+      price: price,
+      discount: discount,
+      quantity,
+      imageUrl: plant?.imageUrl?.[0],
+      finalPrice: discount > 0 ? Math.round(price - (price * discount) / 100) : price,
+    };
+
+    // ✅ Calculate totals
+    const subtotal = selectedItem.price * selectedItem.quantity;
+    const totalDiscount = discount > 0 ? (selectedItem.price * discount * selectedItem.quantity) / 100 : 0;
+    const deliveryCharge = subtotal > 500 ? 0 : 50; // Example
+    const grandTotal = subtotal - totalDiscount + deliveryCharge;
+
+    // ✅ Navigate with ONLY this product
+    navigate("/checkout", {
+      state: {
+        cartItems: [selectedItem], // 👈 Single product only
+        subtotal,
+        totalDiscount,
+        deliveryCharge,
+        grandTotal,
+      },
+    });
+  } catch (err) {
+    console.error("Buy Now failed", err);
+  }
+};
+
+
 
   const handleDecrease = async () => {
     try {
@@ -227,9 +267,16 @@ const PlantCard = ({ plant }) => {
             </div>
           )}
 
-          <button className="flex-1 h-11 border border-green-500 text-green-600 bg-white rounded-lg font-medium hover:bg-green-50 transition">
-            Buy Now
-          </button>
+         <button
+  onClick={(e) => {
+    e.stopPropagation();
+    handleBuyNow();
+  }}
+  className="flex-1 h-11 border border-green-500 text-green-600 bg-white rounded-lg font-medium hover:bg-green-50 transition"
+>
+  Buy Now
+</button>
+
         </div>
       </div>
     </div>

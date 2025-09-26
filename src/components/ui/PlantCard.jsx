@@ -1,66 +1,128 @@
+// src/components/ui/PlantCard.jsx
 import React, { useState, useEffect } from "react";
 import { FaHeart, FaShareAlt, FaStar, FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { addToCart, updateCart, removeFromCart, getCart } from "../../services/cartService";
+import { addToWishlist, removeFromWishlist, getWishlist } from "../../services/wishlistService";
+import { toast } from "react-toastify";
 
 const PlantCard = ({ plant }) => {
   const navigate = useNavigate();
   const [count, setCount] = useState(0);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [loading, setLoading] = useState(true); // loading state
+  const [error, setError] = useState(null); // error state
 
-  console.log(plant);
   if (!plant) return null;
 
+  // Fetch cart & wishlist safely
   useEffect(() => {
-    const fetchCart = async () => {
+    const fetchData = async () => {
       try {
+        setLoading(true);
+
+        // Cart
         const cartItems = await getCart();
-        const item = cartItems.find((p) => p.productId === plant.productId);
-        if (item) {
-          setCount(item.quantity);
-        }
+        const cartItem = Array.isArray(cartItems)
+          ? cartItems.find((p) => p.productId === plant.productId)
+          : null;
+        if (cartItem) setCount(cartItem.quantity);
+
+        // Wishlist
+        const wishlistData = await getWishlist();
+        const wishlistArray = Array.isArray(wishlistData)
+          ? wishlistData
+          : wishlistData?.wishlist || [];
+
+        setIsWishlisted(
+          wishlistArray.some((p) => p.productId === plant.productId)
+        );
       } catch (err) {
-        console.error("Failed to fetch cart", err);
+        console.error("Failed to fetch cart/wishlist", err);
+        setError("Failed to load cart or wishlist data");
+      } finally {
+        setLoading(false);
       }
     };
-    fetchCart();
+
+    fetchData();
   }, [plant.productId]);
 
   const discount = Number(plant?.discount) || 0;
   const price = Number(plant?.price) || 0;
-  const originalPrice = discount > 0 ? Math.round(price / (1 - discount / 100)) : price;
+  const originalPrice =
+    discount > 0 ? Math.round(price / (1 - discount / 100)) : price;
 
   const handleCardClick = (e) => {
-    if (e.target.closest("button") || e.target.closest("svg") || e.target.closest("path")) return;
+    if (
+      e.target.closest("button") ||
+      e.target.closest("svg") ||
+      e.target.closest("path")
+    )
+      return;
     navigate(`/product/${plant.productId}`);
   };
 
-  // ✅ Add to Cart
+  // Cart handlers
   const handleAddToCart = async () => {
-  await addToCart(plant.productId, 1);
-  setCount(1);
-  window.dispatchEvent(new Event("cartUpdated")); // 🔔 notify Header
-};
+    try {
+      await addToCart(plant.productId, 1);
+      setCount(1);
+      window.dispatchEvent(new Event("cartUpdated"));
+    } catch {
+      toast.error("Failed to add to cart");
+    }
+  };
 
-// ✅ Increase
-const handleIncrease = async () => {
-  const newCount = count + 1;
-  await updateCart(plant.productId, newCount);
-  setCount(newCount);
-  window.dispatchEvent(new Event("cartUpdated"));
-};
+  const handleIncrease = async () => {
+    try {
+      const newCount = count + 1;
+      await updateCart(plant.productId, newCount);
+      setCount(newCount);
+      window.dispatchEvent(new Event("cartUpdated"));
+    } catch {
+      toast.error("Failed to update cart");
+    }
+  };
 
-// ✅ Decrease
-const handleDecrease = async () => {
-  if (count === 1) {
-    await removeFromCart(plant.productId);
-    setCount(0);
-  } else {
-    const newCount = count - 1;
-    await updateCart(plant.productId, newCount);
-    setCount(newCount);
-  }
-  window.dispatchEvent(new Event("cartUpdated"));
-};
+  const handleDecrease = async () => {
+    try {
+      if (count === 1) {
+        await removeFromCart(plant.productId);
+        setCount(0);
+      } else {
+        const newCount = count - 1;
+        await updateCart(plant.productId, newCount);
+        setCount(newCount);
+      }
+      window.dispatchEvent(new Event("cartUpdated"));
+    } catch {
+      toast.error("Failed to update cart");
+    }
+  };
+
+  // Wishlist toggle
+  const handleWishlistToggle = async (e) => {
+    e.stopPropagation();
+    try {
+      if (isWishlisted) {
+        await removeFromWishlist(plant.productId);
+        setIsWishlisted(false);
+        toast.info("Removed from Wishlist");
+      } else {
+        await addToWishlist(plant.productId);
+        setIsWishlisted(true);
+        toast.success("Added to Wishlist");
+      }
+      window.dispatchEvent(new Event("wishlistUpdated")); // update Navbar badge
+    } catch {
+      toast.error("Failed to update wishlist");
+    }
+  };
+
+  if (loading) return <div className="text-center py-4">Loading...</div>;
+  if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
+
   return (
     <div
       onClick={handleCardClick}
@@ -73,14 +135,17 @@ const handleDecrease = async () => {
         </div>
       )}
 
-      {/* ❤️ Wishlist + 🔗 Share */}
-      <div className="absolute top-3 right-3 flex flex-col items-center space-y-2 text-gray-400 z-20">
+      {/* Wishlist + Share */}
+      <div className="absolute top-3 right-3 flex flex-col items-center space-y-2 z-20">
         <button
-          onClick={(e) => e.stopPropagation()}
-          className="p-2 bg-white rounded-full shadow hover:text-red-500 hover:scale-110 transition"
+          onClick={handleWishlistToggle}
+          className={`p-2 bg-white rounded-full shadow hover:scale-110 transition ${
+            isWishlisted ? "text-red-500" : "text-gray-400 hover:text-red-500"
+          }`}
         >
           <FaHeart size={16} />
         </button>
+
         <button
           onClick={(e) => e.stopPropagation()}
           className="p-2 bg-white rounded-full shadow hover:text-green-500 hover:scale-110 transition"
@@ -89,7 +154,7 @@ const handleDecrease = async () => {
         </button>
       </div>
 
-      {/* Image / Video */}
+      {/* Image */}
       <div className="relative w-full h-52 overflow-hidden">
         <img
           src={plant?.imageUrl?.[0] || "https://via.placeholder.com/150"}
@@ -117,7 +182,7 @@ const handleDecrease = async () => {
           {plant?.productName || "Unknown Plant"}
         </h2>
 
-        {/* ⭐ Rating */}
+        {/* Rating */}
         <div className="flex items-center justify-center mt-2 space-x-1">
           {Array.from({ length: 5 }).map((_, i) => (
             <FaStar
@@ -127,7 +192,7 @@ const handleDecrease = async () => {
           ))}
         </div>
 
-        {/* 💰 Price */}
+        {/* Price */}
         <div className="flex items-center justify-center mt-3 gap-3">
           <span className="text-green-600 font-bold text-xl">₹{price}</span>
           {discount > 0 && (
@@ -135,6 +200,7 @@ const handleDecrease = async () => {
           )}
         </div>
 
+        {/* Cart Buttons */}
         <div className="flex flex-col sm:flex-row justify-between mt-5 gap-2 z-20 relative">
           {count === 0 ? (
             <button

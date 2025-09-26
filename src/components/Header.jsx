@@ -1,3 +1,4 @@
+// src/components/layout/Header.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,7 +13,8 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 import { GiPlantRoots } from "react-icons/gi";
-import { getCart } from "../services/cartService"; // ✅ import cart service
+import { getCart } from "../services/cartService";
+import { getWishlist } from "../services/wishlistService";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -21,51 +23,67 @@ const navItems = [
   { name: "Orders", path: "/orders" },
 ];
 
-
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0); // ✅ cart state
+  const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   const navigate = useNavigate();
 
-  // ✅ Fetch cart count from backend
+  // Fetch cart count
   const fetchCartCount = async () => {
     try {
       const cart = await getCart();
-      const count = cart.reduce((acc, item) => acc + (item.quantity || 1), 0);
+      const count = Array.isArray(cart)
+        ? cart.reduce((acc, item) => acc + (item.quantity || 1), 0)
+        : 0;
       setCartCount(count);
-    } catch (error) {
-      console.error("Failed to fetch cart:", error);
+    } catch (err) {
+      console.error("Failed to fetch cart:", err);
       setCartCount(0);
     }
   };
 
-  // ✅ Load user + cart once, and listen for updates
+  // Fetch wishlist count
+  const fetchWishlistCount = async () => {
+    try {
+      const res = await getWishlist();
+      const wishlistArray = Array.isArray(res?.wishlist) ? res.wishlist : [];
+      setWishlistCount(wishlistArray.length);
+    } catch (err) {
+      console.error("Failed to fetch wishlist:", err);
+      setWishlistCount(0);
+    }
+  };
+
+  // Load user, cart, wishlist and setup listeners
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
 
     fetchCartCount();
+    fetchWishlistCount();
 
-    // 🔔 Listen for cart updates
-    const handleCartUpdated = () => {
-      fetchCartCount();
-    };
+    const handleCartUpdated = () => fetchCartCount();
+    const handleWishlistUpdated = () => fetchWishlistCount();
 
     window.addEventListener("cartUpdated", handleCartUpdated);
+    window.addEventListener("wishlistUpdated", handleWishlistUpdated);
 
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdated);
+      window.removeEventListener("wishlistUpdated", handleWishlistUpdated);
     };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    localStorage.removeItem("token"); // ✅ clear token too
+    localStorage.removeItem("token");
     setUser(null);
     setCartCount(0);
+    setWishlistCount(0);
     navigate("/login");
   };
 
@@ -117,15 +135,17 @@ const Header = () => {
 
         {/* Right Icons */}
         <div className="flex items-center space-x-4 md:space-x-6 text-lg md:text-xl">
-          {/* Wishlist (static for now) */}
+          {/* Wishlist */}
           <Link to="/wishlist" className="relative hover:opacity-80">
             <FaHeart className="text-green-900" />
-            <span className="absolute -top-2 -right-2 bg-pink-600 text-xs w-4 h-4 flex items-center justify-center rounded-full text-white">
-              2
-            </span>
+            {wishlistCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-pink-600 text-xs w-4 h-4 flex items-center justify-center rounded-full text-white">
+                {wishlistCount}
+              </span>
+            )}
           </Link>
 
-          {/* Cart with live count */}
+          {/* Cart */}
           <Link to="/cart" className="relative hover:opacity-80">
             <FaShoppingCart className="text-green-900" />
             {cartCount > 0 && (
@@ -149,7 +169,6 @@ const Header = () => {
                 </span>
               </button>
 
-              {/* Dropdown Menu */}
               <AnimatePresence>
                 {dropdownOpen && (
                   <motion.div

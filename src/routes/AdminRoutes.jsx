@@ -22,7 +22,11 @@ const AdminRoutes = () => {
         <Route path="/users" element={<Users />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/blogs" element={<Blogs />} />
-        <Route path="/blogs/add" element={<AddBlog />} />
+        {/*<Route path="/blogs/add" element={<AddBlog />} />*/}
+        // App or AdminRoutes
+       <Route path="/blogs/add" element={<AddBlog />} />
+       <Route path="/blogs/edit/:blogId" element={<AddBlog />} />
+
         <Route path="/profile" element={<Profile />} />
         <Route path="/products/productDetails/:productId" element={<ProductDetails />} />
 

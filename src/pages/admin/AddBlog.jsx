@@ -1,52 +1,100 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaUpload } from "react-icons/fa"; // upload icon
+// src/pages/admin/AddBlog.jsx
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { addBlog, getBlogById, updateBlog } from "../../services/blogService";
+import { Loader2, Upload } from "lucide-react";
+import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
 
 const AddBlog = () => {
   const navigate = useNavigate();
+  const { blogId } = useParams();
   const [formData, setFormData] = useState({
     title: "",
-    content: "",
-    images: [],
+    category: "",
+    description: "",
+    imageUrl: "", // single image URL
   });
+  const [previewUrl, setPreviewUrl] = useState(""); // preview
+  const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Handle text inputs
+  // Prefill data if editing
+  useEffect(() => {
+    if (blogId) {
+      setLoading(true);
+      getBlogById(blogId)
+        .then((res) => {
+          const data = res.data.data;
+          setFormData({
+            title: data.title || "",
+            category: data.category || "",
+            description: data.description || "",
+            imageUrl: data.imageUrl || "",
+          });
+          setPreviewUrl(data.imageUrl || "");
+        })
+        .catch((err) => {
+          console.error("Error fetching blog:", err);
+          alert("Failed to load blog data");
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [blogId]);
+
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // Handle multiple image upload
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const readers = files.map(
-      (file) =>
-        new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(file);
-        })
-    );
+  // Upload single image to Cloudinary
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    Promise.all(readers).then((images) => {
-      setFormData({ ...formData, images: [...formData.images, ...images] });
-    });
+    setUploadingImage(true);
+    try {
+      const url = await uploadToCloudinary(file, "image");
+      setFormData((prev) => ({ ...prev, imageUrl: url }));
+      setPreviewUrl(url);
+    } catch (err) {
+      alert("Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
-  // Save Blog
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    const storedBlogs = JSON.parse(localStorage.getItem("blogs")) || [];
-    const newBlog = { ...formData, id: Date.now() };
-    const updated = [...storedBlogs, newBlog];
-    localStorage.setItem("blogs", JSON.stringify(updated));
-    navigate("/admin/blogs");
+    try {
+      const payload = {
+        title: formData.title,
+        category: formData.category,
+        description: formData.description,
+        imageUrl: formData.imageUrl,
+      };
+
+      if (blogId) {
+        await updateBlog(blogId, payload);
+        alert("Blog updated successfully!");
+      } else {
+        await addBlog(payload);
+        alert("Blog added successfully!");
+      }
+      navigate("/admin/blogs");
+    } catch (err) {
+      console.error(err);
+      alert("Error saving blog");
+    }
   };
+
+  if (loading) return <p className="text-center py-12">Loading blog data...</p>;
 
   return (
     <div className="max-w-3xl mx-auto py-12 px-4">
-      <h1 className="text-2xl font-bold text-green-700 mb-6">Add New Blog</h1>
+      <h1 className="text-2xl font-bold text-green-700 mb-6">
+        {blogId ? "Edit Blog" : "Add New Blog"}
+      </h1>
 
       <form onSubmit={handleSave} className="bg-white shadow-md rounded-lg p-6">
-        {/* Blog Title */}
+        {/* Title */}
         <input
           type="text"
           name="title"
@@ -54,63 +102,73 @@ const AddBlog = () => {
           value={formData.title}
           onChange={handleChange}
           required
-          className="w-full mb-4 p-2 border-2 border-green-300 rounded focus:outline-none focus:ring-2 focus:ring-green-600"
+          className="w-full mb-4 p-2 border rounded"
         />
 
-        {/* Blog Content */}
+        {/* Category */}
+        <input
+          type="text"
+          name="category"
+          placeholder="Blog Category"
+          value={formData.category}
+          onChange={handleChange}
+          required
+          className="w-full mb-4 p-2 border rounded"
+        />
+
+        {/* Description */}
         <textarea
-          name="content"
+          name="description"
           placeholder="Blog Content"
-          value={formData.content}
+          value={formData.description}
           onChange={handleChange}
           required
           rows="5"
-          className="w-full mb-4 p-2 border-2 border-green-300 rounded focus:outline-none focus:ring-2 focus:ring-green-600"
+          className="w-full mb-4 p-2 border rounded"
         />
 
-        {/* Upload Images */}
-        <label
-          htmlFor="upload-images"
-          className="border-2 border-dashed border-green-300 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-green-50"
-        >
-          <FaUpload className="text-green-300 text-2xl mb-2" />
-          <span className="text-green-300">Click to upload (multiple)</span>
-          <input
-            id="upload-images"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-        </label>
-
-        {/* Preview Images */}
-        <div className="flex flex-wrap gap-4 mt-4">
-          {formData.images.map((img, index) => (
-            <img
-              key={index}
-              src={img}
-              alt="Preview"
-              className="w-32 h-32 object-cover rounded border-2 border-green-100"
+        {/* Upload Image */}
+        <div className="flex flex-col">
+          <label className="mb-2 font-medium text-gray-700">Upload Image</label>
+          <label className="border-2 border-dashed border-green-400 rounded-xl flex flex-col items-center justify-center p-6 cursor-pointer hover:bg-green-50 transition">
+            {uploadingImage ? (
+              <Loader2 className="w-6 h-6 text-green-600 animate-spin mb-2" />
+            ) : (
+              <Upload className="w-10 h-10 text-green-600 mb-2" />
+            )}
+            <span className="text-sm text-gray-600">Click to upload</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileUpload}
             />
-          ))}
+          </label>
+
+          {previewUrl && (
+            <img
+              src={previewUrl}
+              alt="preview"
+              className="w-32 h-32 object-cover rounded-md border mt-2"
+            />
+          )}
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-end gap-4 mt-6">
-          <button
-            type="button"
-            onClick={() => navigate("/admin/blogs")}
-            className="px-4 py-2 border rounded hover:bg-gray-100"
-          >
-            Cancel
-          </button>
+        <div className="flex gap-4 mt-6">
           <button
             type="submit"
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700"
           >
-            Save
+            {blogId ? "Update Blog" : "Save"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/admin/blogs")}
+            className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+          >
+            Cancel
           </button>
         </div>
       </form>

@@ -1,6 +1,6 @@
 // src/pages/OrderDetails.jsx
 import React, { useEffect, useState } from "react";
-import { getMyOrders, getOrderById} from "../../services/orderService";
+import { getMyOrders} from "../../services/orderService";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Package,

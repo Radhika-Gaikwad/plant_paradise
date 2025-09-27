@@ -2,20 +2,29 @@
 import React, { useState, useEffect } from "react";
 import { FaHeart, FaShareAlt, FaStar, FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { addToCart, updateCart, removeFromCart, getCart } from "../../services/cartService";
-import { addToWishlist, removeFromWishlist, getWishlist } from "../../services/wishlistService";
+import {
+  addToCart,
+  updateCart,
+  removeFromCart,
+  getCart,
+} from "../../services/cartService";
+import {
+  addToWishlist,
+  removeFromWishlist,
+  getWishlist,
+} from "../../services/wishlistService";
 import { toast } from "react-toastify";
 
 const PlantCard = ({ plant }) => {
   const navigate = useNavigate();
   const [count, setCount] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [loading, setLoading] = useState(true); // loading state
-  const [error, setError] = useState(null); // error state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   if (!plant) return null;
 
-  // Fetch cart & wishlist safely
+  // Fetch cart & wishlist
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -30,12 +39,10 @@ const PlantCard = ({ plant }) => {
 
         // Wishlist
         const wishlistData = await getWishlist();
-        const wishlistArray = Array.isArray(wishlistData)
-          ? wishlistData
-          : wishlistData?.wishlist || [];
-
         setIsWishlisted(
-          wishlistArray.some((p) => p.productId === plant.productId)
+          Array.isArray(wishlistData)
+            ? wishlistData.some((p) => p.productId === plant.productId)
+            : false
         );
       } catch (err) {
         console.error("Failed to fetch cart/wishlist", err);
@@ -69,61 +76,18 @@ const PlantCard = ({ plant }) => {
       await addToCart(plant.productId, 1);
       setCount(1);
       window.dispatchEvent(new Event("cartUpdated"));
+      toast.success("Added to cart");
     } catch {
       toast.error("Failed to add to cart");
     }
   };
 
-// ✅ Increase
-const handleIncrease = async () => {
-  const newCount = count + 1;
-  await updateCart(plant.productId, newCount);
-  setCount(newCount);
-  window.dispatchEvent(new Event("cartUpdated"));
-};
-
-// ✅ Buy Now (Single Product Checkout)
-const handleBuyNow = async () => {
-  try {
-    // If product already in cart, use its count
-    const cartItems = await getCart();
-    const existingItem = cartItems.find((p) => p.productId === plant.productId);
-
-    const quantity = existingItem ? existingItem.quantity : 1;
-
-    // Only this product goes to checkout
-    const selectedItem = {
-      productId: plant.productId,
-      productName: plant.productName,
-      price: price,
-      discount: discount,
-      quantity,
-      imageUrl: plant?.imageUrl?.[0],
-      finalPrice: discount > 0 ? Math.round(price - (price * discount) / 100) : price,
-    };
-
-    // ✅ Calculate totals
-    const subtotal = selectedItem.price * selectedItem.quantity;
-    const totalDiscount = discount > 0 ? (selectedItem.price * discount * selectedItem.quantity) / 100 : 0;
-    const deliveryCharge = subtotal > 500 ? 0 : 50; // Example
-    const grandTotal = subtotal - totalDiscount + deliveryCharge;
-
-    // ✅ Navigate with ONLY this product
-    navigate("/checkout", {
-      state: {
-        cartItems: [selectedItem], // 👈 Single product only
-        subtotal,
-        totalDiscount,
-        deliveryCharge,
-        grandTotal,
-      },
-    });
-  } catch (err) {
-    console.error("Buy Now failed", err);
-  }
-};
-
-
+  const handleIncrease = async () => {
+    const newCount = count + 1;
+    await updateCart(plant.productId, newCount);
+    setCount(newCount);
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
 
   const handleDecrease = async () => {
     try {
@@ -154,9 +118,48 @@ const handleBuyNow = async () => {
         setIsWishlisted(true);
         toast.success("Added to Wishlist");
       }
-      window.dispatchEvent(new Event("wishlistUpdated")); // update Navbar badge
+      window.dispatchEvent(new Event("wishlistUpdated")); // update header badge
     } catch {
       toast.error("Failed to update wishlist");
+    }
+  };
+
+  // Buy Now (single product checkout)
+  const handleBuyNow = async () => {
+    try {
+      const cartItems = await getCart();
+      const existingItem = cartItems.find(
+        (p) => p.productId === plant.productId
+      );
+      const quantity = existingItem ? existingItem.quantity : 1;
+
+      const selectedItem = {
+        productId: plant.productId,
+        productName: plant.productName,
+        price,
+        discount,
+        quantity,
+        imageUrl: plant?.imageUrl?.[0],
+        finalPrice: discount > 0 ? Math.round(price - (price * discount) / 100) : price,
+      };
+
+      const subtotal = selectedItem.price * selectedItem.quantity;
+      const totalDiscount =
+        discount > 0 ? (selectedItem.price * discount * selectedItem.quantity) / 100 : 0;
+      const deliveryCharge = subtotal > 500 ? 0 : 50;
+      const grandTotal = subtotal - totalDiscount + deliveryCharge;
+
+      navigate("/checkout", {
+        state: {
+          cartItems: [selectedItem],
+          subtotal,
+          totalDiscount,
+          deliveryCharge,
+          grandTotal,
+        },
+      });
+    } catch (err) {
+      console.error("Buy Now failed", err);
     }
   };
 
@@ -199,21 +202,8 @@ const handleBuyNow = async () => {
         <img
           src={plant?.imageUrl?.[0] || "https://via.placeholder.com/150"}
           alt={plant?.productName || "Plant"}
-          className={`w-full h-full object-cover bg-repeat transition-opacity duration-300 ${
-            plant?.video?.length > 0 ? "group-hover:opacity-0" : ""
-          }`}
+          className="w-full h-full object-cover"
         />
-        {plant?.video?.length > 0 && (
-          <video
-            src={plant.video[0]}
-            className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            autoPlay
-            muted
-            loop
-            playsInline
-            controls
-          />
-        )}
       </div>
 
       {/* Content */}
@@ -241,7 +231,7 @@ const handleBuyNow = async () => {
         </div>
 
         {/* Cart Buttons */}
-        <div className="flex flex-col sm:flex-row justify-between mt-5 gap-2 z-20 relative">
+        <div className="flex flex-col sm:flex-row justify-between mt-5 gap-2">
           {count === 0 ? (
             <button
               onClick={handleAddToCart}
@@ -267,16 +257,15 @@ const handleBuyNow = async () => {
             </div>
           )}
 
-         <button
-  onClick={(e) => {
-    e.stopPropagation();
-    handleBuyNow();
-  }}
-  className="flex-1 h-11 border border-green-500 text-green-600 bg-white rounded-lg font-medium hover:bg-green-50 transition"
->
-  Buy Now
-</button>
-
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleBuyNow();
+            }}
+            className="flex-1 h-11 border border-green-500 text-green-600 bg-white rounded-lg font-medium hover:bg-green-50 transition"
+          >
+            Buy Now
+          </button>
         </div>
       </div>
     </div>

@@ -1,19 +1,20 @@
 import axiosInstance from "../utils/axios/axiosInstance";
+//import axios from "axios";
 
-// ✅ Get wishlist
+//const API = "https://plant-paradise-backend.onrender.com/api/v1/wishlist";
+// ✅ Get all wishlist items
 export const getWishlist = async () => {
   const { data } = await axiosInstance.get("/wishlist");
-  return data;
+  return data.data; // backend wraps items inside "data"
 };
 
-// ✅ Add to wishlist
+// ✅ Add product to wishlist
 export const addToWishlist = async (productId) => {
   const { data } = await axiosInstance.post("/wishlist/add", { productId });
-  return data;
+  return data.data;
 };
 
-// ✅ Remove from wishlist
 export const removeFromWishlist = async (productId) => {
-  const { data } = await axiosInstance.delete(`/wishlist/remove/${productId}`);
-  return data;
+  const { data } = await axiosInstance.post("/wishlist/remove", { productId });
+  return data.data;
 };

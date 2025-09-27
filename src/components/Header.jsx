@@ -1,5 +1,5 @@
 // src/components/layout/Header.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -32,8 +32,8 @@ const Header = () => {
 
   const navigate = useNavigate();
 
-  // Fetch cart count
-  const fetchCartCount = async () => {
+  // Using useCallback to avoid unnecessary re-renders
+  const fetchCartCount = useCallback(async () => {
     try {
       const cart = await getCart();
       const count = Array.isArray(cart)
@@ -44,28 +44,29 @@ const Header = () => {
       console.error("Failed to fetch cart:", err);
       setCartCount(0);
     }
-  };
+  }, []);
 
-  // Fetch wishlist count
-  const fetchWishlistCount = async () => {
+  const fetchWishlistCount = useCallback(async () => {
     try {
-      const res = await getWishlist();
-      const wishlistArray = Array.isArray(res?.wishlist) ? res.wishlist : [];
-      setWishlistCount(wishlistArray.length);
+      const wishlist = await getWishlist();
+      const count = Array.isArray(wishlist) ? wishlist.length : 0;
+      setWishlistCount(count);
     } catch (err) {
       console.error("Failed to fetch wishlist:", err);
       setWishlistCount(0);
     }
-  };
+  }, []);
 
-  // Load user, cart, wishlist and setup listeners
+  // Load user and set up listeners
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
 
+    // Initial fetch
     fetchCartCount();
     fetchWishlistCount();
 
+    // Real-time update listeners
     const handleCartUpdated = () => fetchCartCount();
     const handleWishlistUpdated = () => fetchWishlistCount();
 
@@ -76,7 +77,7 @@ const Header = () => {
       window.removeEventListener("cartUpdated", handleCartUpdated);
       window.removeEventListener("wishlistUpdated", handleWishlistUpdated);
     };
-  }, []);
+  }, [fetchCartCount, fetchWishlistCount]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -87,8 +88,7 @@ const Header = () => {
     navigate("/login");
   };
 
-  const gradientText =
-    "bg-gradient-to-r from-green-900 via-green-700 to-green-900";
+  const gradientText = "bg-gradient-to-r from-green-900 via-green-700 to-green-900";
   const gradientBtn =
     "bg-gradient-to-r from-green-900 via-green-700 to-green-900 bg-[length:200%_200%] animate-gradientMove";
 
@@ -139,7 +139,7 @@ const Header = () => {
           <Link to="/wishlist" className="relative hover:opacity-80">
             <FaHeart className="text-green-900" />
             {wishlistCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-pink-600 text-xs w-4 h-4 flex items-center justify-center rounded-full text-white">
+              <span className="absolute -top-2 -right-2 bg-pink-600 text-xs w-4 h-4 flex items-center justify-center rounded-full text-white transition-all duration-200">
                 {wishlistCount}
               </span>
             )}
@@ -149,7 +149,7 @@ const Header = () => {
           <Link to="/cart" className="relative hover:opacity-80">
             <FaShoppingCart className="text-green-900" />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-yellow-600 text-xs w-5 h-5 flex items-center justify-center rounded-full text-white">
+              <span className="absolute -top-2 -right-2 bg-yellow-600 text-xs w-5 h-5 flex items-center justify-center rounded-full text-white transition-all duration-200">
                 {cartCount}
               </span>
             )}

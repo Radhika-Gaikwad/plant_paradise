@@ -17,6 +17,7 @@ import CheckoutPage from "../pages/user/CheckoutPage";
 import OrderDetails from "../pages/user/OrderDetails";
 import Blog from "../pages/user/Blog";
 import BlogDetails  from "../pages/user/BlogDetails";
+import Wishlist from "../pages/user/Wishlist";
 
 const UserRoutes = () => {
   return (
@@ -40,7 +41,8 @@ const UserRoutes = () => {
         <Route path="/checkout" element={<CheckoutPage />} />   
         <Route path="/orders/:id" element={<OrderDetails />} />   
         <Route path="/blogs" element={<Blog />} />
-        <Route path="/blogs/:id" element={<BlogDetails />} />   
+        <Route path="/blogs/:id" element={<BlogDetails />} />  
+        <Route path="/wishlist" element={<Wishlist/>} />    
       </Route>
     </Routes>
   );

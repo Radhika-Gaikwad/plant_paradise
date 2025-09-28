@@ -1,15 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { FaHeart, FaShareAlt, FaStar, FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { addToCart, updateCart, removeFromCart, getCart } from "../../services/cartService";
+import {
+  addToCart,
+  updateCart,
+  removeFromCart,
+  getCart,
+} from "../../services/cartService";
+import {
+  addToWishlist,
+  removeFromWishlist,
+  getWishlist,
+} from "../../services/wishlistService";
 
 const PlantCard = ({ plant }) => {
   const navigate = useNavigate();
   const [count, setCount] = useState(0);
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
-  
-  if (!plant) return null;
+  // ✅ Wishlist check on load
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const wishlist = await getWishlist();
+        const item = wishlist.find((p) => p.productId === plant.productId);
+        if (item) setIsWishlisted(true);
+      } catch (err) {
+        console.error("Failed to fetch wishlist", err);
+      }
+    };
+    fetchWishlist();
+  }, [plant.productId]);
 
+  // ✅ Cart check on load
   useEffect(() => {
     const fetchCart = async () => {
       try {
@@ -25,85 +48,110 @@ const PlantCard = ({ plant }) => {
     fetchCart();
   }, [plant.productId]);
 
+  const handleWishlistToggle = async () => {
+    try {
+      if (isWishlisted) {
+        await removeFromWishlist(plant.productId);
+        setIsWishlisted(false);
+      } else {
+        await addToWishlist(plant.productId);
+        setIsWishlisted(true);
+      }
+      window.dispatchEvent(new Event("wishlistUpdated")); // 🔔 notify Header
+    } catch (err) {
+      console.error("Wishlist action failed", err);
+    }
+  };
+
+  if (!plant) return null;
+
   const discount = Number(plant?.discount) || 0;
   const price = Number(plant?.price) || 0;
-  const originalPrice = discount > 0 ? Math.round(price / (1 - discount / 100)) : price;
+  const originalPrice =
+    discount > 0 ? Math.round(price / (1 - discount / 100)) : price;
 
   const handleCardClick = (e) => {
-    if (e.target.closest("button") || e.target.closest("svg") || e.target.closest("path")) return;
+    if (
+      e.target.closest("button") ||
+      e.target.closest("svg") ||
+      e.target.closest("path")
+    )
+      return;
     navigate(`/product/${plant.productId}`);
   };
 
   // ✅ Add to Cart
   const handleAddToCart = async () => {
-  await addToCart(plant.productId, 1);
-  setCount(1);
-  window.dispatchEvent(new Event("cartUpdated")); // 🔔 notify Header
-};
+    await addToCart(plant.productId, 1);
+    setCount(1);
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
 
-// ✅ Increase
-const handleIncrease = async () => {
-  const newCount = count + 1;
-  await updateCart(plant.productId, newCount);
-  setCount(newCount);
-  window.dispatchEvent(new Event("cartUpdated"));
-};
-
-// ✅ Buy Now (Single Product Checkout)
-const handleBuyNow = async () => {
-  try {
-    // If product already in cart, use its count
-    const cartItems = await getCart();
-    const existingItem = cartItems.find((p) => p.productId === plant.productId);
-
-    const quantity = existingItem ? existingItem.quantity : 1;
-
-    // Only this product goes to checkout
-    const selectedItem = {
-      productId: plant.productId,
-      productName: plant.productName,
-      price: price,
-      discount: discount,
-      quantity,
-      imageUrl: plant?.imageUrl?.[0],
-      finalPrice: discount > 0 ? Math.round(price - (price * discount) / 100) : price,
-    };
-
-    // ✅ Calculate totals
-    const subtotal = selectedItem.price * selectedItem.quantity;
-    const totalDiscount = discount > 0 ? (selectedItem.price * discount * selectedItem.quantity) / 100 : 0;
-    const deliveryCharge = subtotal > 500 ? 0 : 50; // Example
-    const grandTotal = subtotal - totalDiscount + deliveryCharge;
-
-    // ✅ Navigate with ONLY this product
-    navigate("/checkout", {
-      state: {
-        cartItems: [selectedItem], // 👈 Single product only
-        subtotal,
-        totalDiscount,
-        deliveryCharge,
-        grandTotal,
-      },
-    });
-  } catch (err) {
-    console.error("Buy Now failed", err);
-  }
-};
-
-
-
-// ✅ Decrease
-const handleDecrease = async () => {
-  if (count === 1) {
-    await removeFromCart(plant.productId);
-    setCount(0);
-  } else {
-    const newCount = count - 1;
+  // ✅ Increase
+  const handleIncrease = async () => {
+    const newCount = count + 1;
     await updateCart(plant.productId, newCount);
     setCount(newCount);
-  }
-  window.dispatchEvent(new Event("cartUpdated"));
-};
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
+
+  // ✅ Decrease
+  const handleDecrease = async () => {
+    if (count === 1) {
+      await removeFromCart(plant.productId);
+      setCount(0);
+    } else {
+      const newCount = count - 1;
+      await updateCart(plant.productId, newCount);
+      setCount(newCount);
+    }
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
+
+  // ✅ Buy Now (Single Product Checkout)
+  const handleBuyNow = async () => {
+    try {
+      const cartItems = await getCart();
+      const existingItem = cartItems.find(
+        (p) => p.productId === plant.productId
+      );
+      const quantity = existingItem ? existingItem.quantity : 1;
+
+      const selectedItem = {
+        productId: plant.productId,
+        productName: plant.productName,
+        price: price,
+        discount: discount,
+        quantity,
+        imageUrl: plant?.imageUrl?.[0],
+        finalPrice:
+          discount > 0
+            ? Math.round(price - (price * discount) / 100)
+            : price,
+      };
+
+      const subtotal = selectedItem.price * selectedItem.quantity;
+      const totalDiscount =
+        discount > 0
+          ? (selectedItem.price * discount * selectedItem.quantity) / 100
+          : 0;
+      const deliveryCharge = subtotal > 500 ? 0 : 50;
+      const grandTotal = subtotal - totalDiscount + deliveryCharge;
+
+      navigate("/checkout", {
+        state: {
+          cartItems: [selectedItem], // 👈 Single product only
+          subtotal,
+          totalDiscount,
+          deliveryCharge,
+          grandTotal,
+        },
+      });
+    } catch (err) {
+      console.error("Buy Now failed", err);
+    }
+  };
+
   return (
     <div
       onClick={handleCardClick}
@@ -119,11 +167,19 @@ const handleDecrease = async () => {
       {/* ❤️ Wishlist + 🔗 Share */}
       <div className="absolute top-3 right-3 flex flex-col items-center space-y-2 text-gray-400 z-20">
         <button
-          onClick={(e) => e.stopPropagation()}
-          className="p-2 bg-white rounded-full shadow hover:text-red-500 hover:scale-110 transition"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleWishlistToggle();
+          }}
+          className={`p-2 bg-white rounded-full shadow hover:scale-110 transition ${
+            isWishlisted
+              ? "text-red-500"
+              : "text-gray-400 hover:text-red-500"
+          }`}
         >
           <FaHeart size={16} />
         </button>
+
         <button
           onClick={(e) => e.stopPropagation()}
           className="p-2 bg-white rounded-full shadow hover:text-green-500 hover:scale-110 transition"
@@ -165,7 +221,11 @@ const handleDecrease = async () => {
           {Array.from({ length: 5 }).map((_, i) => (
             <FaStar
               key={i}
-              className={i < (plant?.overAllRating ?? 0) ? "text-yellow-400" : "text-gray-300"}
+              className={
+                i < (plant?.overAllRating ?? 0)
+                  ? "text-yellow-400"
+                  : "text-gray-300"
+              }
             />
           ))}
         </div>
@@ -174,10 +234,13 @@ const handleDecrease = async () => {
         <div className="flex items-center justify-center mt-3 gap-3">
           <span className="text-green-600 font-bold text-xl">₹{price}</span>
           {discount > 0 && (
-            <span className="text-gray-400 line-through text-sm">₹{originalPrice}</span>
+            <span className="text-gray-400 line-through text-sm">
+              ₹{originalPrice}
+            </span>
           )}
         </div>
 
+        {/* 🛒 Cart + Buy */}
         <div className="flex flex-col sm:flex-row justify-between mt-5 gap-2 z-20 relative">
           {count === 0 ? (
             <button
@@ -204,16 +267,15 @@ const handleDecrease = async () => {
             </div>
           )}
 
-         <button
-  onClick={(e) => {
-    e.stopPropagation();
-    handleBuyNow();
-  }}
-  className="flex-1 h-11 border border-green-500 text-green-600 bg-white rounded-lg font-medium hover:bg-green-50 transition"
->
-  Buy Now
-</button>
-
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleBuyNow();
+            }}
+            className="flex-1 h-11 border border-green-500 text-green-600 bg-white rounded-lg font-medium hover:bg-green-50 transition"
+          >
+            Buy Now
+          </button>
         </div>
       </div>
     </div>

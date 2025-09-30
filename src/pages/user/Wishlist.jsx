@@ -3,23 +3,34 @@ import { FaArrowLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PlantCard from "../../components/ui/PlantCard";
 import { getWishlist } from "../../services/wishlistService";
-import { showToast } from "../../utils/showToast";
+//import { showToast } from "../../utils/showToast";
+import { getProductById } from "../../services/productApi";
 
 const Wishlist = () => {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+
   const fetchWishlistData = async () => {
-    try {
-      const data = await getWishlist();
-      setWishlist(data || []);
-    } catch (err) {
-      showToast("Failed to fetch wishlist", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const data = await getWishlist();
+
+    // fetch full product details for each wishlist item
+    const detailedWishlist = await Promise.all(
+      (data || []).map(async (item) => {
+        const product = await getProductById(item.productId);
+        return product; // full product object with price, rating, etc.
+      })
+    );
+
+    setWishlist(detailedWishlist);
+  } catch (err) {
+    showToast("Failed to fetch wishlist", "error");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchWishlistData();
@@ -47,8 +58,9 @@ const Wishlist = () => {
       ) : (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {wishlist.map((plant) => (
-            <PlantCard key={plant.productId} plant={plant} />
+           <PlantCard key={plant._id} plant={plant} />
           ))}
+
         </div>
       )}
     </div>

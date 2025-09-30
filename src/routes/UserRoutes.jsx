@@ -41,8 +41,8 @@ const UserRoutes = () => {
         <Route path="/checkout" element={<CheckoutPage />} />   
         <Route path="/orders/:id" element={<OrderDetails />} />   
         <Route path="/blogs" element={<Blog />} />
-        <Route path="/blogs/:id" element={<BlogDetails />} />  
-        <Route path="/wishlist" element={<Wishlist/>} />    
+        <Route path="/blogs/:id" element={<BlogDetails />} />
+        <Route path="/wishlist" element={<Wishlist />} />  
       </Route>
     </Routes>
   );

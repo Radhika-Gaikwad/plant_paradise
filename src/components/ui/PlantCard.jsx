@@ -1,3 +1,4 @@
+// src/components/ui/PlantCard.jsx
 import React, { useState, useEffect } from "react";
 import { FaHeart, FaShareAlt, FaStar, FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -12,56 +13,48 @@ import {
   removeFromWishlist,
   getWishlist,
 } from "../../services/wishlistService";
+import { toast } from "react-toastify";
 
 const PlantCard = ({ plant }) => {
   const navigate = useNavigate();
   const [count, setCount] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // ✅ Wishlist check on load
-  useEffect(() => {
-    const fetchWishlist = async () => {
-      try {
-        const wishlist = await getWishlist();
-        const item = wishlist.find((p) => p.productId === plant.productId);
-        if (item) setIsWishlisted(true);
-      } catch (err) {
-        console.error("Failed to fetch wishlist", err);
-      }
-    };
-    fetchWishlist();
-  }, [plant.productId]);
+  if (!plant) return null;
 
-  // ✅ Cart check on load
+  // Fetch cart & wishlist
   useEffect(() => {
-    const fetchCart = async () => {
+    const fetchData = async () => {
       try {
+        setLoading(true);
+
+        // Cart
         const cartItems = await getCart();
-        const item = cartItems.find((p) => p.productId === plant.productId);
-        if (item) {
-          setCount(item.quantity);
-        }
+        const cartItem = Array.isArray(cartItems)
+          ? cartItems.find((p) => p.productId === plant.productId)
+          : null;
+        if (cartItem) setCount(cartItem.quantity);
+
+        // Wishlist
+        const wishlistData = await getWishlist();
+        setIsWishlisted(
+          Array.isArray(wishlistData)
+            ? wishlistData.some((p) => p.productId === plant.productId)
+            : false
+        );
       } catch (err) {
-        console.error("Failed to fetch cart", err);
+        console.error("Failed to fetch cart/wishlist", err);
+        setError("Failed to load cart or wishlist data");
+      } finally {
+        setLoading(false);
       }
     };
-    fetchCart();
+
+    fetchData();
   }, [plant.productId]);
 
-  const handleWishlistToggle = async () => {
-    try {
-      if (isWishlisted) {
-        await removeFromWishlist(plant.productId);
-        setIsWishlisted(false);
-      } else {
-        await addToWishlist(plant.productId);
-        setIsWishlisted(true);
-      }
-      window.dispatchEvent(new Event("wishlistUpdated")); // 🔔 notify Header
-    } catch (err) {
-      console.error("Wishlist action failed", err);
-    }
-  };
 
   if (!plant) return null;
 
@@ -80,14 +73,18 @@ const PlantCard = ({ plant }) => {
     navigate(`/product/${plant.productId}`);
   };
 
-  // ✅ Add to Cart
+  // Cart handlers
   const handleAddToCart = async () => {
-    await addToCart(plant.productId, 1);
-    setCount(1);
-    window.dispatchEvent(new Event("cartUpdated"));
+    try {
+      await addToCart(plant.productId, 1);
+      setCount(1);
+      window.dispatchEvent(new Event("cartUpdated"));
+      toast.success("Added to cart");
+    } catch {
+      toast.error("Failed to add to cart");
+    }
   };
 
-  // ✅ Increase
   const handleIncrease = async () => {
     const newCount = count + 1;
     await updateCart(plant.productId, newCount);
@@ -95,20 +92,42 @@ const PlantCard = ({ plant }) => {
     window.dispatchEvent(new Event("cartUpdated"));
   };
 
-  // ✅ Decrease
   const handleDecrease = async () => {
-    if (count === 1) {
-      await removeFromCart(plant.productId);
-      setCount(0);
-    } else {
-      const newCount = count - 1;
-      await updateCart(plant.productId, newCount);
-      setCount(newCount);
+    try {
+      if (count === 1) {
+        await removeFromCart(plant.productId);
+        setCount(0);
+      } else {
+        const newCount = count - 1;
+        await updateCart(plant.productId, newCount);
+        setCount(newCount);
+      }
+      window.dispatchEvent(new Event("cartUpdated"));
+    } catch {
+      toast.error("Failed to update cart");
     }
-    window.dispatchEvent(new Event("cartUpdated"));
   };
 
-  // ✅ Buy Now (Single Product Checkout)
+  // Wishlist toggle
+  const handleWishlistToggle = async (e) => {
+    e.stopPropagation();
+    try {
+      if (isWishlisted) {
+        await removeFromWishlist(plant.productId);
+        setIsWishlisted(false);
+        toast.info("Removed from Wishlist");
+      } else {
+        await addToWishlist(plant.productId);
+        setIsWishlisted(true);
+        toast.success("Added to Wishlist");
+      }
+      window.dispatchEvent(new Event("wishlistUpdated")); // update header badge
+    } catch {
+      toast.error("Failed to update wishlist");
+    }
+  };
+
+  // Buy Now (single product checkout)
   const handleBuyNow = async () => {
     try {
       const cartItems = await getCart();
@@ -120,27 +139,22 @@ const PlantCard = ({ plant }) => {
       const selectedItem = {
         productId: plant.productId,
         productName: plant.productName,
-        price: price,
-        discount: discount,
+        price,
+        discount,
         quantity,
         imageUrl: plant?.imageUrl?.[0],
-        finalPrice:
-          discount > 0
-            ? Math.round(price - (price * discount) / 100)
-            : price,
+        finalPrice: discount > 0 ? Math.round(price - (price * discount) / 100) : price,
       };
 
       const subtotal = selectedItem.price * selectedItem.quantity;
       const totalDiscount =
-        discount > 0
-          ? (selectedItem.price * discount * selectedItem.quantity) / 100
-          : 0;
+        discount > 0 ? (selectedItem.price * discount * selectedItem.quantity) / 100 : 0;
       const deliveryCharge = subtotal > 500 ? 0 : 50;
       const grandTotal = subtotal - totalDiscount + deliveryCharge;
 
       navigate("/checkout", {
         state: {
-          cartItems: [selectedItem], // 👈 Single product only
+          cartItems: [selectedItem],
           subtotal,
           totalDiscount,
           deliveryCharge,
@@ -151,6 +165,9 @@ const PlantCard = ({ plant }) => {
       console.error("Buy Now failed", err);
     }
   };
+
+  if (loading) return <div className="text-center py-4">Loading...</div>;
+  if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
 
   return (
     <div
@@ -164,17 +181,12 @@ const PlantCard = ({ plant }) => {
         </div>
       )}
 
-      {/* ❤️ Wishlist + 🔗 Share */}
-      <div className="absolute top-3 right-3 flex flex-col items-center space-y-2 text-gray-400 z-20">
+      {/* Wishlist + Share */}
+      <div className="absolute top-3 right-3 flex flex-col items-center space-y-2 z-20">
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleWishlistToggle();
-          }}
+          onClick={handleWishlistToggle}
           className={`p-2 bg-white rounded-full shadow hover:scale-110 transition ${
-            isWishlisted
-              ? "text-red-500"
-              : "text-gray-400 hover:text-red-500"
+            isWishlisted ? "text-red-500" : "text-gray-400 hover:text-red-500"
           }`}
         >
           <FaHeart size={16} />
@@ -188,26 +200,13 @@ const PlantCard = ({ plant }) => {
         </button>
       </div>
 
-      {/* Image / Video */}
+      {/* Image */}
       <div className="relative w-full h-52 overflow-hidden">
         <img
           src={plant?.imageUrl?.[0] || "https://via.placeholder.com/150"}
           alt={plant?.productName || "Plant"}
-          className={`w-full h-full object-cover bg-repeat transition-opacity duration-300 ${
-            plant?.video?.length > 0 ? "group-hover:opacity-0" : ""
-          }`}
+          className="w-full h-full object-cover"
         />
-        {plant?.video?.length > 0 && (
-          <video
-            src={plant.video[0]}
-            className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            autoPlay
-            muted
-            loop
-            playsInline
-            controls
-          />
-        )}
       </div>
 
       {/* Content */}
@@ -216,7 +215,7 @@ const PlantCard = ({ plant }) => {
           {plant?.productName || "Unknown Plant"}
         </h2>
 
-        {/* ⭐ Rating */}
+        {/* Rating */}
         <div className="flex items-center justify-center mt-2 space-x-1">
           {Array.from({ length: 5 }).map((_, i) => (
             <FaStar
@@ -230,7 +229,7 @@ const PlantCard = ({ plant }) => {
           ))}
         </div>
 
-        {/* 💰 Price */}
+        {/* Price */}
         <div className="flex items-center justify-center mt-3 gap-3">
           <span className="text-green-600 font-bold text-xl">₹{price}</span>
           {discount > 0 && (
@@ -240,8 +239,8 @@ const PlantCard = ({ plant }) => {
           )}
         </div>
 
-        {/* 🛒 Cart + Buy */}
-        <div className="flex flex-col sm:flex-row justify-between mt-5 gap-2 z-20 relative">
+        {/* Cart Buttons */}
+        <div className="flex flex-col sm:flex-row justify-between mt-5 gap-2">
           {count === 0 ? (
             <button
               onClick={handleAddToCart}

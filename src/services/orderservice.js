@@ -9,9 +9,7 @@ const getAuthHeaders = () => {
   };
 };
 
-// -------------------------
 // Step 1: Create payment order
-// -------------------------
 export const createPaymentOrder = async (amount) => {
   try {
     const { data } = await axiosInstance.post(
@@ -21,17 +19,11 @@ export const createPaymentOrder = async (amount) => {
     );
     return data;
   } catch (error) {
-    showToast(
-      error.response?.data?.message || "Failed to create payment order",
-      "error"
-    );
+    showToast(error.response?.data?.message || "Failed to create payment order", "error");
     throw error;
   }
 };
 
-// -------------------------
-// Step 2: Verify payment
-// -------------------------
 export const verifyPaymentOrder = async (payload) => {
   try {
     const { data } = await axiosInstance.post(
@@ -49,9 +41,7 @@ export const verifyPaymentOrder = async (payload) => {
   }
 };
 
-// -------------------------
 // Step 3: Place order (ONLINE or COD)
-// -------------------------
 export const placeOrder = async (orderBody) => {
   try {
     const { data } = await axiosInstance.post(
@@ -59,20 +49,15 @@ export const placeOrder = async (orderBody) => {
       orderBody,
       getAuthHeaders()
     );
-    showToast("Order placed successfully!", "success");
+    console.log(data);
     return data;
   } catch (error) {
-    showToast(
-      error.response?.data?.message || "Failed to place order",
-      "error"
-    );
+    showToast(error.response?.data?.message || "Failed to place order", "error");
     throw error;
   }
 };
 
-// -------------------------
-// Step 4: Get user orders
-// -------------------------
+// src/services/orderService.js
 export const getMyOrders = async () => {
   try {
     const { data } = await axiosInstance.get(
@@ -81,29 +66,9 @@ export const getMyOrders = async () => {
     );
     return data.orders || [];
   } catch (error) {
-    showToast(
-      error.response?.data?.message || "Failed to fetch orders",
-      "error"
-    );
+    showToast(error.response?.data?.message || "Failed to fetch orders", "error");
     throw error;
   }
 };
 
-// -------------------------
-// Step 5: Get single order by ID
-// -------------------------
-export const getOrderById = async (id) => {
-  try {
-    const { data } = await axiosInstance.get(
-      `orders/order/${id}`,
-      getAuthHeaders()
-    );
-    return data.order; // assuming backend sends { order: {...} }
-  } catch (error) {
-    showToast(
-      error.response?.data?.message || "Order not found",
-      "error"
-    );
-    throw error;
-  }
-};
+

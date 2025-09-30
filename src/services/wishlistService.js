@@ -1,52 +1,20 @@
 import axiosInstance from "../utils/axios/axiosInstance";
-import { showToast } from "../utils/showToast";
+//import axios from "axios";
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    headers: { Authorization: `Bearer ${token}` },
-  };
-};
-
-// ✅ Add product to Wishlist
-export const addToWishlist = async (productId) => {
-  try {
-    const { data } = await axiosInstance.post(
-      "wishlist/add",
-      { productId },
-      getAuthHeaders()
-    );
-    showToast("Product added to wishlist!", "success");
-    return data;
-  } catch (error) {
-    showToast(error.response?.data?.message || "Failed to add to wishlist", "error");
-    throw error;
-  }
-};
-
-// ✅ Remove product from Wishlist
-export const removeFromWishlist = async (productId) => {
-  try {
-    const { data } = await axiosInstance.post(
-      "wishlist/remove",
-      { productId },
-      getAuthHeaders()
-    );
-    showToast("Product removed from wishlist!", "success");
-    return data;
-  } catch (error) {
-    showToast(error.response?.data?.message || "Failed to remove from wishlist", "error");
-    throw error;
-  }
-};
-
-// ✅ Get Wishlist items
+//const API = "https://plant-paradise-backend.onrender.com/api/v1/wishlist";
+// ✅ Get all wishlist items
 export const getWishlist = async () => {
-  try {
-    const { data } = await axiosInstance.get("wishlist", getAuthHeaders());
-    return data;
-  } catch (error) {
-    showToast(error.response?.data?.message || "Failed to fetch wishlist", "error");
-    throw error;
-  }
+  const { data } = await axiosInstance.get("/wishlist");
+  return data.data; // backend wraps items inside "data"
+};
+
+// ✅ Add product to wishlist
+export const addToWishlist = async (productId) => {
+  const { data } = await axiosInstance.post("/wishlist/add", { productId });
+  return data.data;
+};
+
+export const removeFromWishlist = async (productId) => {
+  const { data } = await axiosInstance.post("/wishlist/remove", { productId });
+  return data.data;
 };

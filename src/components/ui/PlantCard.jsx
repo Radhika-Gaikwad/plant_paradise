@@ -112,11 +112,9 @@ const PlantCard = ({ plant }) => {
       if (isWishlisted) {
         await removeFromWishlist(plant.productId);
         setIsWishlisted(false);
-        toast.info("Removed from Wishlist");
       } else {
         await addToWishlist(plant.productId);
         setIsWishlisted(true);
-        toast.success("Added to Wishlist");
       }
       window.dispatchEvent(new Event("wishlistUpdated")); // update header badge
     } catch {
@@ -197,13 +195,26 @@ const PlantCard = ({ plant }) => {
         </button>
       </div>
 
-      {/* Image */}
+       {/* Image / Video */}
       <div className="relative w-full h-52 overflow-hidden">
         <img
           src={plant?.imageUrl?.[0] || "https://via.placeholder.com/150"}
           alt={plant?.productName || "Plant"}
-          className="w-full h-full object-cover"
+          className={`w-full h-full object-cover bg-repeat transition-opacity duration-300 ${
+            plant?.video?.length > 0 ? "group-hover:opacity-0" : ""
+          }`}
         />
+        {plant?.video?.length > 0 && (
+          <video
+            src={plant.video[0]}
+            className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls
+          />
+        )}
       </div>
 
       {/* Content */}

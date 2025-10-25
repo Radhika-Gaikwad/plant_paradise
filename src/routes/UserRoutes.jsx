@@ -28,7 +28,7 @@ const UserRoutes = () => {
         <Route path="/categories" element={<Categories />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/cart" element={<Cart />} />
-        <Route path="/products" element={<Products />} />
+        {/*<Route path="/products" element={<Products />} />*/}
         <Route path="/place-order" element={<PlaceOrder />} />
         <Route 
           path="/profile" 
@@ -36,13 +36,15 @@ const UserRoutes = () => {
         />
         <Route path="/profile" element={<Profile />} />
         <Route path="/products/:categoryId" element={<ProductsC />} />
+        <Route path="/products/sub/:subCategoryId" element={<ProductsC />} />
         <Route path="/product/:productId" element={<UserProductDetails />} />
         <Route path="/addresses" element={<AddressPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />   
         <Route path="/orders/:id" element={<OrderDetails />} />   
         <Route path="/blogs" element={<Blog />} />
         <Route path="/blogs/:id" element={<BlogDetails />} />
-        <Route path="/wishlist" element={<Wishlist />} />  
+        <Route path="/wishlist" element={<Wishlist />} /> 
+         
       </Route>
     </Routes>
   );

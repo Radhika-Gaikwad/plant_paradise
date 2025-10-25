@@ -89,7 +89,7 @@ const Blogs = () => {
                 <td className="border px-4 py-2">{i + 1}</td>
                 <td className="border px-4 py-2">{blog.title}</td>
                 <td className="border px-4 py-2">{blog.category}</td>
-                <td className="border px-4 py-2">
+                {/*<td className="border px-4 py-2">
                   {blog.imageUrl ? (
                     <img
                       src={blog.imageUrl}
@@ -99,7 +99,29 @@ const Blogs = () => {
                   ) : (
                     <span className="text-gray-400 italic">No Image</span>
                   )}
-                </td>
+                </td>*/}
+                <td className="border px-4 py-2">
+  {blog.imageUrls && blog.imageUrls.length > 0 ? (
+    <div className="flex flex-wrap justify-center gap-2">
+      {blog.imageUrls.slice(0, 3).map((url, idx) => ( // show max 3 images
+        <img
+          key={idx}
+          src={url}
+          alt={`blog-${idx}`}
+          className="w-16 h-16 object-cover rounded-md border"
+        />
+      ))}
+      {blog.imageUrls.length > 3 && (
+        <span className="text-sm text-gray-500">
+          +{blog.imageUrls.length - 3} more
+        </span>
+      )}
+    </div>
+  ) : (
+    <span className="text-gray-400 italic">No Images</span>
+  )}
+</td>
+
                 <td className="border px-4 py-2">
                   <FaEdit
                     onClick={() =>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link ,useLocation} from "react-router-dom";
 import { loginUser } from "./authSlice";
 import { GiPlantRoots } from "react-icons/gi";
 import login from "../../assets/login1.jpg";
@@ -16,6 +16,8 @@ const LoginForm = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const { loading } = useSelector((state) => state.auth);
 
   // ✅ Regex patterns
@@ -61,12 +63,19 @@ const LoginForm = () => {
       localStorage.setItem("user", JSON.stringify(userData));
 console.log(token);
 console.log(userData);
-      // ✅ Correct Redirect
+     /* // ✅ Correct Redirect
       if (result.data?.user?.role === 1) {
         navigate("/admin/dashboard");
       } else {
         navigate("/");
-      }
+      }*/// ✅ Redirect to previous page or home
+if (result.data?.user?.role === 1) {
+  navigate("/admin/dashboard");
+} else {
+  const redirectPath = location.state?.from || "/";
+  navigate(redirectPath);
+}
+
 
     } catch (err) {
       showToast(err, "error");

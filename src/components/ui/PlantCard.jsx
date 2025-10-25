@@ -14,6 +14,7 @@ import {
   getWishlist,
 } from "../../services/wishlistService";
 import { toast } from "react-toastify";
+import ShareModel from "./ShareModel";
 
 const PlantCard = ({ plant }) => {
   const navigate = useNavigate();
@@ -21,10 +22,11 @@ const PlantCard = ({ plant }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showShare, setShowShare] = useState(false);
 
   if (!plant) return null;
 
-  // Fetch cart & wishlist
+  /*// Fetch cart & wishlist
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -53,7 +55,43 @@ const PlantCard = ({ plant }) => {
     };
 
     fetchData();
-  }, [plant.productId]);
+  }, [plant.productId]);*/
+  // Fetch cart & wishlist safely
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        // ✅ Skip fetch if user is not logged in
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Cart
+      const cartItems = await getCart();
+      const cartItem = Array.isArray(cartItems)
+        ? cartItems.find((p) => p.productId === plant.productId)
+        : null;
+      if (cartItem) setCount(cartItem.quantity);
+
+      // ✅ Wishlist
+      const wishlistData = await getWishlist();
+      setIsWishlisted(
+        Array.isArray(wishlistData)
+          ? wishlistData.some((p) => p.productId === plant.productId)
+          : false
+      );
+    } catch (err) {
+      console.error("Failed to fetch cart/wishlist", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [plant.productId]);
+
 
   const discount = Number(plant?.discount) || 0;
   const price = Number(plant?.price) || 0;
@@ -70,17 +108,23 @@ const PlantCard = ({ plant }) => {
     navigate(`/product/${plant.productId}`);
   };
 
-  // Cart handlers
   const handleAddToCart = async () => {
-    try {
-      await addToCart(plant.productId, 1);
-      setCount(1);
-      window.dispatchEvent(new Event("cartUpdated"));
-      toast.success("Added to cart");
-    } catch {
-      toast.error("Failed to add to cart");
-    }
-  };
+  const token = localStorage.getItem("token");
+  if (!token) {
+    navigate("/login");
+    return;
+  }
+
+  try {
+    await addToCart(plant.productId, 1);
+    setCount(1);
+    window.dispatchEvent(new Event("cartUpdated"));
+    toast.success("Added to cart");
+  } catch {
+    toast.error("Failed to add to cart");
+  }
+};
+
 
   const handleIncrease = async () => {
     const newCount = count + 1;
@@ -121,45 +165,53 @@ const PlantCard = ({ plant }) => {
       toast.error("Failed to update wishlist");
     }
   };
-
-  // Buy Now (single product checkout)
   const handleBuyNow = async () => {
-    try {
-      const cartItems = await getCart();
-      const existingItem = cartItems.find(
-        (p) => p.productId === plant.productId
-      );
-      const quantity = existingItem ? existingItem.quantity : 1;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    navigate("/login");
+    return;
+  }
 
-      const selectedItem = {
-        productId: plant.productId,
-        productName: plant.productName,
-        price,
-        discount,
-        quantity,
-        imageUrl: plant?.imageUrl?.[0],
-        finalPrice: discount > 0 ? Math.round(price - (price * discount) / 100) : price,
-      };
+  try {
+    const cartItems = await getCart();
+    const existingItem = cartItems.find(
+      (p) => p.productId === plant.productId
+    );
+    const quantity = existingItem ? existingItem.quantity : 1;
 
-      const subtotal = selectedItem.price * selectedItem.quantity;
-      const totalDiscount =
-        discount > 0 ? (selectedItem.price * discount * selectedItem.quantity) / 100 : 0;
-      const deliveryCharge = subtotal > 500 ? 0 : 50;
-      const grandTotal = subtotal - totalDiscount + deliveryCharge;
+    const selectedItem = {
+      productId: plant.productId,
+      productName: plant.productName,
+      price,
+      discount,
+      quantity,
+      imageUrl: plant?.imageUrl?.[0],
+      finalPrice:
+        discount > 0 ? Math.round(price - (price * discount) / 100) : price,
+    };
 
-      navigate("/checkout", {
-        state: {
-          cartItems: [selectedItem],
-          subtotal,
-          totalDiscount,
-          deliveryCharge,
-          grandTotal,
-        },
-      });
-    } catch (err) {
-      console.error("Buy Now failed", err);
-    }
-  };
+    const subtotal = selectedItem.price * selectedItem.quantity;
+    const totalDiscount =
+      discount > 0
+        ? (selectedItem.price * discount * selectedItem.quantity) / 100
+        : 0;
+    const deliveryCharge = subtotal > 500 ? 0 : 50;
+    const grandTotal = subtotal - totalDiscount + deliveryCharge;
+
+    navigate("/checkout", {
+      state: {
+        cartItems: [selectedItem],
+        subtotal,
+        totalDiscount,
+        deliveryCharge,
+        grandTotal,
+      },
+    });
+  } catch (err) {
+    console.error("Buy Now failed", err);
+  }
+};
+
 
   if (loading) return <div className="text-center py-4">Loading...</div>;
   if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
@@ -186,15 +238,16 @@ const PlantCard = ({ plant }) => {
         >
           <FaHeart size={16} />
         </button>
-
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="p-2 bg-white rounded-full shadow hover:text-green-500 hover:scale-110 transition"
-        >
-          <FaShareAlt size={14} />
-        </button>
+         <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowShare(true); // open modal
+            }}
+            className="p-2 bg-white rounded-full shadow hover:text-green-500 hover:scale-110 transition"
+          >
+            <FaShareAlt size={14} />
+          </button>
       </div>
-
        {/* Image / Video */}
       <div className="relative w-full h-52 overflow-hidden">
         <img
@@ -216,6 +269,14 @@ const PlantCard = ({ plant }) => {
           />
         )}
       </div>
+      {showShare && (
+      <ShareModel
+        shareUrl={`${window.location.origin}/product/${plant.productId}`}
+        title={`Share ${plant.productName}`}
+        onClose={() => setShowShare(false)}
+       />
+      )}
+
 
       {/* Content */}
       <div className="p-4 flex flex-col flex-grow">

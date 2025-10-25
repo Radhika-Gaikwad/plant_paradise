@@ -12,9 +12,9 @@ const AddBlog = () => {
     title: "",
     category: "",
     description: "",
-    imageUrl: "", // single image URL
+    imageUrls: [], // multiple image URL
   });
-  const [previewUrl, setPreviewUrl] = useState(""); // preview
+  //const [previewUrls, setPreviewUrls] = useState(""); // preview
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -29,9 +29,9 @@ const AddBlog = () => {
             title: data.title || "",
             category: data.category || "",
             description: data.description || "",
-            imageUrl: data.imageUrl || "",
+            imageUrls: data.imageUrls || [],
           });
-          setPreviewUrl(data.imageUrl || "");
+          //setPreviewUrls(data.imageUrls || []);
         })
         .catch((err) => {
           console.error("Error fetching blog:", err);
@@ -45,21 +45,43 @@ const AddBlog = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   // Upload single image to Cloudinary
-  const handleFileUpload = async (e) => {
+  /*const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setUploadingImage(true);
     try {
       const url = await uploadToCloudinary(file, "image");
-      setFormData((prev) => ({ ...prev, imageUrl: url }));
-      setPreviewUrl(url);
+      setFormData((prev) => ({ ...prev, imageUrls: url }));
+      setPreviewUrls(url);
     } catch (err) {
       alert("Failed to upload image");
     } finally {
       setUploadingImage(false);
     }
-  };
+  };*/
+  const handleFileUpload = async (e) => {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+
+  setUploadingImage(true);
+  try {
+    const uploadedUrls = [];
+    for (const file of files) {
+      const url = await uploadToCloudinary(file, "image");
+      uploadedUrls.push(url);
+    }
+    setFormData((prev) => ({
+      ...prev,
+      imageUrls: [...prev.imageUrls, ...uploadedUrls],
+    }));
+  } catch (err) {
+    alert("Failed to upload image(s)");
+  } finally {
+    setUploadingImage(false);
+  }
+};
+
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -68,7 +90,7 @@ const AddBlog = () => {
         title: formData.title,
         category: formData.category,
         description: formData.description,
-        imageUrl: formData.imageUrl,
+        imageUrls: formData.imageUrls,
       };
 
       if (blogId) {
@@ -84,6 +106,13 @@ const AddBlog = () => {
       alert("Error saving blog");
     }
   };
+  const removeImage = (url) => {
+  setFormData((prev) => ({
+    ...prev,
+    imageUrls: prev.imageUrls.filter((img) => img !== url),
+  }));
+};
+
 
   if (loading) return <p className="text-center py-12">Loading blog data...</p>;
 
@@ -129,7 +158,7 @@ const AddBlog = () => {
 
         {/* Upload Image */}
         <div className="flex flex-col">
-          <label className="mb-2 font-medium text-gray-700">Upload Image</label>
+          {/*<label className="mb-2 font-medium text-gray-700">Uploading Image</label>
           <label className="border-2 border-dashed border-green-400 rounded-xl flex flex-col items-center justify-center p-6 cursor-pointer hover:bg-green-50 transition">
             {uploadingImage ? (
               <Loader2 className="w-6 h-6 text-green-600 animate-spin mb-2" />
@@ -140,19 +169,57 @@ const AddBlog = () => {
             <input
               type="file"
               accept="image/*"
+              multiple 
               className="hidden"
               onChange={handleFileUpload}
             />
           </label>
 
-          {previewUrl && (
+          {previewUrls && (
             <img
-              src={previewUrl}
+              src={previewUrls}
               alt="preview"
               className="w-32 h-32 object-cover rounded-md border mt-2"
             />
           )}
-        </div>
+        </div>*/}
+        <label className="mb-2 font-medium text-gray-700">Upload Images</label>
+<label className="border-2 border-dashed border-green-400 rounded-xl flex flex-col items-center justify-center p-6 cursor-pointer hover:bg-green-50 transition">
+  {uploadingImage ? (
+    <Loader2 className="w-6 h-6 text-green-600 animate-spin mb-2" />
+  ) : (
+    <Upload className="w-10 h-10 text-green-600 mb-2" />
+  )}
+  <span className="text-sm text-gray-600">Click to upload multiple images</span>
+  <input
+    type="file"
+    accept="image/*"
+    multiple
+    className="hidden"
+    onChange={handleFileUpload}
+  />
+</label>
+
+{/* ✅ Multiple image previews */}
+<div className="flex flex-wrap gap-3 mt-3">
+  {formData.imageUrls.map((url, idx) => (
+    <div
+      key={idx}
+      className="relative group w-24 h-24 rounded-md overflow-hidden border"
+    >
+      <img src={url} alt="preview" className="w-full h-full object-cover" />
+      <button
+        type="button"
+        onClick={() => removeImage(url)}
+        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+      >
+        ✕
+      </button>
+    </div>
+  ))}
+</div>
+</div>
+
 
         {/* Buttons */}
         <div className="flex gap-4 mt-6">

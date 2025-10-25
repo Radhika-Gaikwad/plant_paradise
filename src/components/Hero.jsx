@@ -4,6 +4,8 @@ import { FaSeedling, FaLeaf, FaTree } from "react-icons/fa";
 import hero1 from "../assets/hero1.jpg";
 import hero3 from "../assets/hero3.jpg";
 import hero5 from "../assets/hero5.jpg";
+import { useNavigate } from "react-router-dom";
+
 
 // Images and slogans
 const plantImages = [
@@ -14,6 +16,7 @@ const plantImages = [
 
 const Hero = () => {
   const [index, setIndex] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -47,8 +50,11 @@ const Hero = () => {
           <p className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-green-100">
             Explore Plant Paradise – Your one-stop shop for indoor & outdoor greenery.
           </p>
-          <button className="mt-4 sm:mt-6 bg-green-600 hover:bg-green-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-md text-sm sm:text-base md:text-lg">
-            Shop Now
+          <button
+           onClick={() => navigate("/categories")}
+           className="mt-4 sm:mt-6 bg-green-600 hover:bg-green-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-md text-sm sm:text-base md:text-lg"
+          >
+           Shop Now
           </button>
         </div>
       </div>

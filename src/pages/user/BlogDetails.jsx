@@ -42,31 +42,58 @@ const BlogDetail = () => {
         <h1 className="text-4xl md:text-5xl font-bold text-green-700 mb-6">
           {blog.title}
         </h1>
-        <img
-          src={blog.imageUrl}
-          alt={blog.title}
-          className="w-full h-[500px] object-cover rounded-lg mb-6"
-        />
+        
+        {/* ✅ Additional Images (if multiple) */}
+        {blog.imageUrls && blog.imageUrls.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            {blog.imageUrls.map((img, index) => (
+              <img
+                key={index}
+                src={img}
+                alt={`blog-${index}`}
+                className="w-full h-64 object-cover rounded-lg shadow-md hover:scale-105 transition-transform"
+              />
+            ))}
+          </div>
+        )}
+
         <p className="text-gray-700 whitespace-pre-line text-lg md:text-xl">
           {blog.description || blog.content}
         </p>
       </div>
 
-      {nextBlogs.length > 0 && (
+      {/*{nextBlogs.length > 0 && (
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-6">
             {nextBlogs.map((b) => (
               <BlogCard key={b._id || b.blogId} post={b} />
             ))}
-          </div>
+          </div>*/}
+        {nextBlogs.length > 0 && (
+  <div className="mb-12 relative">
+    <div className="flex justify-between items-center mb-6">
+      <Link to="/blogs" className="text-green-600 font-semibold hover:underline">
+        View All Blogs
+      </Link>
+    </div>
 
-          <div className="mt-6 md:mt-0 md:w-1/4">
-            <Link to="/blogs" className="text-green-600 font-semibold hover:underline">
-              View All Blogs
-            </Link>
-          </div>
-        </div>
-      )}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 items-stretch">
+  {nextBlogs.map((b) => (
+    <div
+      key={b._id || b.blogId}
+      className="flex flex-col h-full"
+    >
+      <div className="flex-1 flex">
+        <BlogCard post={b} wordLimit={25} />
+      </div>
+    </div>
+  ))}
+</div>
+
+    </div>
+
+)}
+
     </div>
   );
 };

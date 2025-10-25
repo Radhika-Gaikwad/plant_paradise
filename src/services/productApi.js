@@ -83,22 +83,36 @@ export const getProductsBySubCategory = async (subCategoryId) => {
 import axiosInstance from "../utils/axios/axiosInstance";
 
 // Utility: get headers with token
-const getAuthHeaders = () => {
+/*const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   return {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   };
-};
+};*/
 
 // Get all products
-export const getAllProducts = async () => {
+/*export const getAllProducts = async () => {
   try {
     const response = await axiosInstance.get("product/getAll", getAuthHeaders());
     return response.data.data.items;
   } catch (error) {
     throw error.response?.data || { message: "Something went wrong" };
+  }
+};*/
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+};
+
+export const getAllProducts = async () => {
+  try {
+    const res = await axiosInstance.get("product/getAll", getAuthHeaders());
+    return res.data.data.items;
+  } catch (err) {
+    console.error(err);
+    return []; // never crash
   }
 };
 

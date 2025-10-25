@@ -1,33 +1,52 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaFacebookF, FaWhatsapp, FaEnvelope, FaLink, FaShareAlt } from "react-icons/fa";
+import ShareModel from "./ShareModel";
 
-const BlogCard = ({ post }) => {
-  const [shareOpen, setShareOpen] = useState(false);
 
-  const toggleShare = () => setShareOpen(!shareOpen);
+const BlogCard = ({ post, wordLimit = 25 }) => {
+  const [showShare, setShowShare] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+
   const shareUrl = window.location.origin + "/blogs/" + (post._id || post.blogId);
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(shareUrl);
-    alert("Link copied!");
-  };
-
   const description = post.description || post.content || "";
-  const shortDesc = description.length > 120 ? description.substring(0, 120) + "..." : description;
 
+  // Truncate by wordLimit
+  const words = description.split(" ");
+  const isTruncated = words.length > wordLimit;
+  const shortDesc = isTruncated ? words.slice(0, wordLimit).join(" ") + "..." : description;
   return (
     <div className="flex flex-col md:flex-row bg-white shadow-lg rounded-xl overflow-hidden hover:shadow-2xl transition mb-6 relative">
       {/* Share Button */}
       <button
-        onClick={toggleShare}
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowShare(true);
+        }}
         className="absolute top-4 right-4 bg-white rounded-full p-2 shadow hover:bg-gray-100 z-10"
       >
         <FaShareAlt size={18} />
       </button>
 
-      {/* Left Image */}
-      <img src={post.imageUrl} alt={post.title} className="w-full md:w-1/3 h-48 md:h-auto object-cover" />
+     {/* Left Image */}
+<div className="w-full md:w-1/3 h-48 md:h-auto relative">
+  <img
+    src={post.imageUrls?.[0] || post.imageUrl} // use imageUrls array first
+    alt={post.title}
+    className="w-full h-full object-cover cursor-pointer"
+    onClick={() => post.imageUrls?.length > 1 && setShowGallery(true)} // open gallery on click
+  />
+  {/* Overlay + Counter */}
+  {post.imageUrls?.length > 1 && (
+    <div
+      className="absolute bottom-2 right-2 bg-black/50 text-white px-2 py-1 text-sm rounded cursor-pointer"
+      onClick={() => setShowGallery(true)} // click overlay opens gallery
+    >
+      +{post.imageUrls.length - 1} more
+    </div>
+  )}
+</div>
 
       {/* Right Content */}
       <div className="flex-1 p-6">
@@ -40,32 +59,34 @@ const BlogCard = ({ post }) => {
           Read More →
         </Link>
       </div>
-
-      {/* Share Modal */}
-      {shareOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-72 text-center relative">
-            <h3 className="font-semibold text-lg mb-4">Share this blog</h3>
-            <div className="flex justify-between mb-4">
-              <a href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 text-white p-3 rounded-full">
-                <FaFacebookF />
-              </a>
-              <a href={`https://wa.me/?text=${shareUrl}`} target="_blank" rel="noopener noreferrer" className="bg-green-500 text-white p-3 rounded-full">
-                <FaWhatsapp />
-              </a>
-              <a href={`mailto:?subject=Check out this blog&body=${shareUrl}`} target="_blank" rel="noopener noreferrer" className="bg-gray-700 text-white p-3 rounded-full">
-                <FaEnvelope />
-              </a>
-              <button onClick={copyLink} className="bg-black text-white p-3 rounded-full">
-                <FaLink />
-              </button>
-            </div>
-            <button onClick={toggleShare} className="absolute top-2 right-2 text-gray-500 hover:text-black text-lg font-bold">
-              ✕
-            </button>
+       {/* ✅ Gallery / Lightbox */}
+      {showGallery && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowGallery(false)}
+        >
+          <div className="flex gap-4 overflow-x-auto max-w-full">
+            {post.imageUrls.map((img, idx) => (
+              <img
+                key={idx}
+                src={img}
+                alt={`img-${idx}`}
+                className="h-96 object-cover rounded-md flex-shrink-0 cursor-pointer"
+              />
+            ))}
           </div>
         </div>
       )}
+
+      {/* Generic ShareModel */}
+      {showShare && (
+        <ShareModel
+          shareUrl={shareUrl}
+          title={`Share "${post.title}"`}
+          onClose={() => setShowShare(false)}
+        />
+      )}
+    
     </div>
   );
 };

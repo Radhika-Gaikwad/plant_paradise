@@ -93,6 +93,9 @@ useEffect(() => {
 }, [plant.productId]);
 
 
+
+  if (!plant) return null;
+
   const discount = Number(plant?.discount) || 0;
   const price = Number(plant?.price) || 0;
   const originalPrice =
@@ -289,7 +292,11 @@ useEffect(() => {
           {Array.from({ length: 5 }).map((_, i) => (
             <FaStar
               key={i}
-              className={i < (plant?.overAllRating ?? 0) ? "text-yellow-400" : "text-gray-300"}
+              className={
+                i < (plant?.overAllRating ?? 0)
+                  ? "text-yellow-400"
+                  : "text-gray-300"
+              }
             />
           ))}
         </div>
@@ -298,7 +305,9 @@ useEffect(() => {
         <div className="flex items-center justify-center mt-3 gap-3">
           <span className="text-green-600 font-bold text-xl">₹{price}</span>
           {discount > 0 && (
-            <span className="text-gray-400 line-through text-sm">₹{originalPrice}</span>
+            <span className="text-gray-400 line-through text-sm">
+              ₹{originalPrice}
+            </span>
           )}
         </div>
 

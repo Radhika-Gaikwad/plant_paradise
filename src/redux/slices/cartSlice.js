@@ -1,34 +1,101 @@
+// src/redux/slices/cartSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getCart } from "../../services/cartService";
+import { getCart, addToCart, updateCart, removeFromCart } from "../../services/cartService";
 
-export const fetchCart = createAsyncThunk("cart/fetch", async (_, { getState }) => {
-  const { cache } = getState().cart;
-  if (cache) return { data: cache, fromCache: true };
+// ✅ Fetch all cart items
+export const fetchCartItems = createAsyncThunk(
+  "cart/fetchCartItems",
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await getCart();
+      return data || [];
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch cart");
+    }
+  }
+);
 
-  const data = await getCart();
-  return { data, fromCache: false };
-});
+// ✅ Add item to cart
+export const addItemToCart = createAsyncThunk(
+  "cart/addItem",
+  async ({ productId, quantity = 1 }, { rejectWithValue }) => {
+    try {
+      const data = await addToCart(productId, quantity);
+      window.dispatchEvent(new Event("cartUpdated"));
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to add item");
+    }
+  }
+);
 
+// ✅ Update item quantity
+export const updateCartItem = createAsyncThunk(
+  "cart/updateItem",
+  async ({ productId, quantity }, { rejectWithValue }) => {
+    try {
+      const data = await updateCart(productId, quantity);
+      window.dispatchEvent(new Event("cartUpdated"));
+      return { productId, quantity };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to update quantity");
+    }
+  }
+);
+
+// ✅ Remove item
+export const removeCartItem = createAsyncThunk(
+  "cart/removeItem",
+  async (productId, { rejectWithValue }) => {
+    try {
+      await removeFromCart(productId);
+      window.dispatchEvent(new Event("cartUpdated"));
+      return productId;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to remove item");
+    }
+  }
+);
+
+// 🧠 Slice
 const cartSlice = createSlice({
   name: "cart",
   initialState: {
     items: [],
-    cache: null,
     loading: false,
+    error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCart.pending, (state) => {
+      // 🛒 Fetch
+      .addCase(fetchCartItems.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchCart.fulfilled, (state, action) => {
+      .addCase(fetchCartItems.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.data;
-        if (!action.payload.fromCache) state.cache = action.payload.data;
+        state.items = action.payload;
       })
-      .addCase(fetchCart.rejected, (state) => {
+      .addCase(fetchCartItems.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload;
+      })
+
+      // ➕ Add
+      .addCase(addItemToCart.fulfilled, (state) => {
+        state.loading = false;
+      })
+
+      // 🔄 Update
+      .addCase(updateCartItem.fulfilled, (state, action) => {
+        const { productId, quantity } = action.payload;
+        const existing = state.items.find((item) => item.productId === productId);
+        if (existing) existing.quantity = quantity;
+      })
+
+      // ❌ Remove
+      .addCase(removeCartItem.fulfilled, (state, action) => {
+        state.items = state.items.filter((item) => item.productId !== action.payload);
       });
   },
 });

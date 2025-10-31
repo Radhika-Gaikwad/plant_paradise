@@ -4,7 +4,9 @@ import OrderService from "../../services/orderAdmin";
 import debounce from "lodash/debounce";
 import { Eye, XCircle, Trash2 } from "lucide-react";
 import { showToast } from "../../utils/showToast";
+import { AdminOrdersShimmer } from "../../components/admin/shimmers";
 const STATUS_OPTIONS = [
+
   "PLACED",
   "CONFIRMED",
   "SHIPPED",
@@ -355,6 +357,9 @@ const handleDelete = async (order) => {
 
       {/* Table (desktop) */}
       <div className="bg-white shadow-lg rounded-2xl hidden md:block">
+         {loading ? (
+          <AdminOrdersShimmer /> // ✅ Show shimmer when loading
+        ) : (
         <div className="overflow-auto border rounded-lg" style={tableMaxHeightStyle}>
           <table className="min-w-full w-[140%] table-fixed border-collapse">
             <thead className="bg-gradient-to-r from-blue-200 to-blue-400 text-gray-800 sticky top-0 z-30">
@@ -371,14 +376,6 @@ const handleDelete = async (order) => {
             </thead>
 
             <tbody className="divide-y divide-gray-200">
-              {loading && (
-                <tr>
-                  <td colSpan="8" className="p-6 text-center text-gray-500">
-                    Loading...
-                  </td>
-                </tr>
-              )}
-
               {!loading && pagedOrders.length === 0 && (
                 <tr>
                   <td colSpan="8" className="p-4 text-center text-gray-500 italic">No orders found.</td>
@@ -440,6 +437,7 @@ const handleDelete = async (order) => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* Cards (mobile) */}

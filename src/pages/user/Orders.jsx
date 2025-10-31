@@ -2,20 +2,39 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyOrders } from "../../services/orderService";
+import OrdersShimmer from "../../components/shimmers/OrdersShimmer";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [sortOption, setSortOption] = useState("latest");
   const [yearFilter, setYearFilter] = useState("all");
   const navigate = useNavigate();
 
-  useEffect(() => {
+  /*useEffect(() => {
     const fetchOrders = async () => {
       const data = await getMyOrders();
       setOrders(data);
     };
     fetchOrders();
+  }, []);*/
+  
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const data = await getMyOrders();
+        setOrders(data);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
   }, []);
+
+  // 🟢 Show shimmer while loading
+  if (loading) {
+    return <OrdersShimmer />;
+  }
 
   const years = [
     ...new Set(orders.map((o) => new Date(o.createdOn).getFullYear())),
@@ -87,7 +106,7 @@ const Orders = () => {
               <div
                 key={order._id}
                 className="border rounded-lg p-2 sm:p-3 bg-white shadow-sm cursor-pointer hover:shadow-md transition"
-                onClick={() => navigate(`/orders/${order._id}`)}
+                onClick={() => navigate(`/orders/${order.orderId}`)}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   {/* Product Images */}

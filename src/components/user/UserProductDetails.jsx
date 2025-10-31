@@ -12,6 +12,7 @@ import { FaTrash } from "react-icons/fa";
 import { showToast } from "../../utils/showToast";
 import PlantCard from "../../components/ui/PlantCard";
 import CategoryHeader from "../ui/CategoryHeader";
+import ProductDetailsShimmer from "../shimmers/ProductDetailsShimmer";
 
 const UserProductDetails = () => {
   const { productId } = useParams();
@@ -119,11 +120,7 @@ const UserProductDetails = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen text-xl font-semibold">
-        Loading product details...
-      </div>
-    );
+    return <ProductDetailsShimmer />
   }
 
   if (!product) {

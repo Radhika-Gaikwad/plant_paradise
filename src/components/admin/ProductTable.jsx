@@ -9,6 +9,7 @@ import { deleteProduct } from "../../services/productApi";
 import { showToast } from "../../utils/showToast";
 import { useNavigate } from "react-router-dom";
 import { GiPlantRoots } from "react-icons/gi";
+import {AdminProductTableShimmer } from "./shimmers";
 
 import {
   useReactTable,
@@ -194,11 +195,12 @@ const ProductTable = () => {
 
   if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center h-screen bg-white">
+        /*<div className="flex flex-col items-center justify-center h-screen bg-white">
           <GiPlantRoots className="text-green-600 text-6xl animate-bounce mb-4" />
           <div className="w-32 h-4 bg-gray-200 animate-pulse rounded mb-4"></div>
           <p className="text-lg font-medium text-gray-700">Loading Products…</p>
-        </div>
+        </div>*/
+        <AdminProductTableShimmer/>
       );
     }
   

@@ -7,6 +7,14 @@ import {
   removeFromCart,
   addToCart,
 } from "../../services/cartService"; // adjust path if needed
+import { useSelector, useDispatch } from "react-redux";
+import {
+  fetchCartItems,
+  updateCartItem,
+  removeCartItem,
+  addItemToCart,
+} from "../../redux/slices/cartSlice";
+import CartShimmer from "../../components/shimmers/CartShimmer";
 
 // CartPage.jsx
 // - Responsive, modern cart layout for Plant Paradise
@@ -18,12 +26,14 @@ import {
 const currency = (v) => `₹${(v ?? 0).toLocaleString("en-IN")}`;
 
 export default function CartPage() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  //const [items, setItems] = useState([]);
+  //const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { items, loading } = useSelector((state) => state.cart);
 
-  useEffect(() => {
+  /*useEffect(() => {
     fetchCart();
   }, []);
 
@@ -37,7 +47,10 @@ export default function CartPage() {
     } finally {
       setLoading(false);
     }
-  };
+  };*/
+    useEffect(() => {
+    dispatch(fetchCartItems());
+    }, [dispatch]);
 
   /*const changeQuantity = async (productId, newQty) => {
     if (newQty < 1) return;
@@ -65,7 +78,7 @@ export default function CartPage() {
       setUpdating(false);
     }
   };
-  */
+  
     const changeQuantity = async (productId, newQty) => {
     if (newQty < 1) return;
     try {
@@ -93,10 +106,19 @@ export default function CartPage() {
     } finally {
       setUpdating(false);
     }
-  };
+  };*/
+  const changeQuantity = (productId, newQty) => {
+  if (newQty < 1) return;
+  dispatch(updateCartItem({ productId, quantity: newQty }));
+};
+  
+const handleRemove = (productId) => {
+  dispatch(removeCartItem(productId));
+};
 
 
-  const handleBuyNow = async (product) => {
+
+  /*const handleBuyNow = async (product) => {
     // For Buy Now we'll add single product to a temporary checkout or navigate to checkout
     // Implementation depends on your flow — here we add item to cart (ensure qty 1) then go to /checkout
     try {
@@ -105,7 +127,12 @@ export default function CartPage() {
     } catch (err) {
       console.error("buy now error", err);
     }
-  };
+  };*/
+  const handleBuyNow = (product) => {
+  dispatch(addItemToCart({ productId: product.productId, quantity: 1 }));
+  navigate("/checkout", { state: { buyNow: true, productId: product.productId } });
+};
+
 
   const subtotal = items.reduce((s, it) => s + it.finalPrice * it.quantity, 0);
   const totalDiscount = items.reduce((s, it) => s + (it.price - it.finalPrice) * it.quantity, 0);
@@ -117,7 +144,7 @@ export default function CartPage() {
       <h1 className="text-3xl font-extrabold mb-6">Your Cart</h1>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading your cart...</div>
+         <CartShimmer />
       ) : items.length === 0 ? (
         <div className="border rounded-lg p-8 text-center">
           <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>

@@ -11,6 +11,7 @@ import EditCategoryForm from "../../components/admin/EditCategoryForm";
 import AddSubCategoryForm from "../../components/admin/AddSubCategoryForm";
 import EditSubCategoryForm from "../../components/admin/EditSubCategoryForm";
 import { showToast } from "../../utils/showToast";
+import { AdminCategoriesShimmer } from "../../components/admin/shimmers";
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState([]);
@@ -80,11 +81,12 @@ const AdminCategories = () => {
 
   if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center h-screen bg-white">
+        /*<div className="flex flex-col items-center justify-center h-screen bg-white">
           <GiPlantRoots className="text-green-600 text-6xl animate-bounce mb-4" />
           <div className="w-32 h-4 bg-gray-200 animate-pulse rounded mb-4"></div>
           <p className="text-lg font-medium text-gray-700">Loading Categories…</p>
-        </div>
+        </div>*/
+        <AdminCategoriesShimmer/>
       );
     }
 

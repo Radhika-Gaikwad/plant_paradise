@@ -5,14 +5,19 @@ import PlantCard from "../../components/ui/PlantCard";
 import { getWishlist } from "../../services/wishlistService";
 //import { showToast } from "../../utils/showToast";
 import { getProductById } from "../../services/productApi";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchWishlist } from "../../redux/slices/wishlistSlice";
+import WishlistShimmer from "../../components/shimmers/WishlistShimmer";
 
 const Wishlist = () => {
-  const [wishlist, setWishlist] = useState([]);
-  const [loading, setLoading] = useState(true);
+  //const [wishlist, setWishlist] = useState([]);
+  //const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-
-
-  const fetchWishlistData = async () => {
+  //const { items, loading } = useSelector((state) => state.wishlist);
+  const { items: wishlist, loading } = useSelector((state) => state.wishlist);
+  const [detailedWishlist, setDetailedWishlist] = useState([]);
+  /*const fetchWishlistData = async () => {
   try {
     const data = await getWishlist();
 
@@ -34,9 +39,34 @@ const Wishlist = () => {
 
   useEffect(() => {
     fetchWishlistData();
-  }, []);
+  }, []);*/
 
-  if (loading) return <p className="text-center py-6">Loading wishlist...</p>;
+  useEffect(() => {
+    dispatch(fetchWishlist());
+  }, [dispatch]);
+
+  useEffect(() => {
+  const fetchDetails = async () => {
+    if (!wishlist || wishlist.length === 0) {
+      setDetailedWishlist([]);
+      return;
+    }
+
+    const details = await Promise.all(
+      wishlist.map(async (item) => {
+        const product = await getProductById(item.productId);
+        return product;
+      })
+    );
+    setDetailedWishlist(details);
+  };
+
+  fetchDetails();
+}, [wishlist]);
+
+
+
+  if (loading) return <WishlistShimmer/>;
 
   return (
     <div className="p-6">
@@ -49,15 +79,15 @@ const Wishlist = () => {
           <FaArrowLeft />
         </button>
         <h2 className="text-xl font-medium text-gray-800">
-          Wishlist ({wishlist.length})
+          Wishlist ({detailedWishlist.length})
         </h2>
       </div>
 
-      {wishlist.length === 0 ? (
+      {detailedWishlist.length === 0 ? (
         <p className="text-gray-500">No items in wishlist</p>
       ) : (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {wishlist.map((plant) => (
+          {detailedWishlist.map((plant) => (
            <PlantCard key={plant._id} plant={plant} />
           ))}
 

@@ -12,6 +12,7 @@ import {
   Clock,
   Star,
 } from "lucide-react";
+import { OrderDetailsShimmer } from "../../components/shimmers";
 
 const statusSteps = [
   { key: "PLACED", label: "Placed", icon: Package },
@@ -48,7 +49,7 @@ const OrderDetails = () => {
      fetchOrder();
   }, [id]);
 
-  if (!order) return <p className="p-6 text-center">Loading...</p>;
+  if (!order) return <OrderDetailsShimmer/>;
 
   const currentStepIndex = statusSteps.findIndex(
     (s) => s.key === order.status

@@ -3,6 +3,7 @@ import { getAllBlogs } from "../../services/blogService";
 import BlogCard from "../../components/ui/BlogCard";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { BlogShimmer } from "../../components/shimmers";
 
 const Blog = () => {
   const [blogs, setBlogs] = useState([]);
@@ -25,7 +26,7 @@ const Blog = () => {
     fetchBlogs();
   }, []);
 
-  if (loading) return <p className="text-center py-12">Loading blogs...</p>;
+  if (loading) return <BlogShimmer/>;
   if (blogs.length === 0) return <p className="text-center py-12">No blogs found.</p>;
 
   // Hero blog is first blog

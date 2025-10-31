@@ -15,6 +15,25 @@ import {
 } from "../../services/wishlistService";
 import { toast } from "react-toastify";
 import ShareModel from "./ShareModel";
+import { useDispatch } from "react-redux";
+import {
+  addItemToWishlist,
+  removeItemFromWishlist,
+} from "../../redux/slices/wishlistSlice";
+import PlantCardShimmer  from "../shimmers/PlantCardShimmer";
+
+
+/*const SkeletonCard = () => (
+  <div className="rounded-2xl shadow-md p-4 animate-pulse w-full h-full flex flex-col">
+    <div className="bg-gray-300 h-52 w-full mb-4 rounded-md"></div>
+    <div className="h-5 bg-gray-300 rounded w-3/4 mb-2"></div>
+    <div className="h-5 bg-gray-300 rounded w-1/2 mb-4"></div>
+    <div className="flex gap-2">
+      <div className="h-10 flex-1 bg-gray-300 rounded"></div>
+      <div className="h-10 flex-1 bg-gray-300 rounded"></div>
+    </div>
+  </div>
+);*/
 
 const PlantCard = ({ plant }) => {
   const navigate = useNavigate();
@@ -122,7 +141,7 @@ useEffect(() => {
     await addToCart(plant.productId, 1);
     setCount(1);
     window.dispatchEvent(new Event("cartUpdated"));
-    toast.success("Added to cart");
+    //toast.success("Added to cart");
   } catch {
     toast.error("Failed to add to cart");
   }
@@ -152,7 +171,7 @@ useEffect(() => {
     }
   };
 
-  // Wishlist toggle
+  /*// Wishlist toggle
   const handleWishlistToggle = async (e) => {
     e.stopPropagation();
     try {
@@ -167,7 +186,25 @@ useEffect(() => {
     } catch {
       toast.error("Failed to update wishlist");
     }
-  };
+  };*/
+
+  // ✅ Redux-based version
+const dispatch = useDispatch();
+
+const handleWishlistToggle = (e) => {
+  e.stopPropagation();
+
+  if (isWishlisted) {
+    dispatch(removeItemFromWishlist(plant.productId));
+    setIsWishlisted(false);
+  } else {
+    dispatch(addItemToWishlist(plant.productId));
+    setIsWishlisted(true);
+  }
+
+  window.dispatchEvent(new Event("wishlistUpdated"));
+};
+
   const handleBuyNow = async () => {
   const token = localStorage.getItem("token");
   if (!token) {
@@ -216,7 +253,7 @@ useEffect(() => {
 };
 
 
-  if (loading) return <div className="text-center py-4">Loading...</div>;
+  if (loading) return <PlantCardShimmer />;
   if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
 
   return (

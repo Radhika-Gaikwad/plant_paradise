@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getAllBlogs, deleteBlog } from "../../services/blogService";
 import { useNavigate } from "react-router-dom";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { BlogsShimmer } from "../../components/admin/shimmers";
 
 const Blogs = () => {
   const [blogs, setBlogs] = useState([]);
@@ -40,7 +41,7 @@ const Blogs = () => {
     }
   };
 
-  if (loading) return <p className="text-center py-4">Loading blogs...</p>;
+  if (loading) return <BlogsShimmer/>;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

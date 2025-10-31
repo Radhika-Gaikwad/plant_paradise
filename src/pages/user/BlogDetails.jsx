@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import BlogCard from "../../components/ui/BlogCard";
 import { getAllBlogs } from "../../services/blogService";
+import { BlogDetailShimmer } from "../../components/shimmers";
 
 const BlogDetail = () => {
   const { id } = useParams();
@@ -27,7 +28,7 @@ const BlogDetail = () => {
     fetchBlogs();
   }, [id]);
 
-  if (loading) return <p className="text-center py-12">Loading blog...</p>;
+  if (loading) return <BlogDetailShimmer/>;
   if (!blog) return <p className="text-center py-12">Blog not found.</p>;
 
   const nextBlogs = allBlogs.filter((b) => b._id !== blog._id && b.blogId !== blog.blogId);
@@ -87,14 +88,11 @@ const BlogDetail = () => {
         <BlogCard post={b} wordLimit={25} />
       </div>
     </div>
-  ))}
+    ))}
+    </div>
+    </div>
+   )}
 </div>
-
-    </div>
-
-)}
-
-    </div>
   );
 };
 

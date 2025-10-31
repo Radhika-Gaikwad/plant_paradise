@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import PaymentPopup from "../../components/ui/PaymentPopup";
 import { showToast } from "../../utils/showToast";
+import CheckoutShimmer from "../../components/shimmers/CheckoutShimmer";
 
 
 const currency = (v) => `₹${v?.toLocaleString?.() ?? v}`;
@@ -39,15 +40,30 @@ export default function CheckoutPage() {
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [processingStep, setProcessingStep] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   // fetch addresses
-  useEffect(() => {
+  /*useEffect(() => {
     async function fetchAddresses() {
       const data = await getUserAddresses();
       setAddresses(data);
       if (data.length > 0) setSelectedAddress(data[0]._id);
     }
     fetchAddresses();
-  }, []);
+  }, []);*/
+  useEffect(() => {
+  async function fetchAddresses() {
+    try {
+      const data = await getUserAddresses();
+      setAddresses(data);
+      if (data.length > 0) setSelectedAddress(data[0]._id);
+    } finally {
+      setLoading(false); // ✅ stops shimmer once data fetched
+    }
+  }
+  fetchAddresses();
+}, []);
+
 
   const handleQtyChange = (productId, newQty) => {
     setItems((prev) =>
@@ -314,6 +330,9 @@ const orderBody = {
   const updatedDiscount = items.reduce((s, it) => s + (it.price - it.finalPrice) * it.quantity, 0);
   const updatedGrandTotal = updatedSubtotal + deliveryCharge;
 
+  if (loading) {
+  return <CheckoutShimmer />; // ✅ display shimmer instead of blank screen
+}
   return (
     <div className="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[calc(100vh-100px)] md:h-[calc(100vh-100px)]">
       {/* Left */}

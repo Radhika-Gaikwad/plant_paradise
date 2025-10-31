@@ -218,12 +218,12 @@ useEffect(() => {
                 <div
                   key={sub._id}
                   className="flex flex-col items-center cursor-pointer"
-                  onClick={() =>
-                    setSelectedSubCategory((prev) =>
-                      prev?._id === sub._id ? null : sub
-                    )
-                  }
-                >
+                    onClick={() => {
+        setSelectedSubCategory(sub);
+        setSelectedCategory(sub.categoryId); // ✅ make sure category updates too
+        navigate(`/products/sub/${sub.subCategoryId || sub._id}`); // ✅ navigate to correct route
+      }}
+    >
                   <img
                     src={sub.imageUrl}
                     alt={sub.subCategoryName}
@@ -255,7 +255,7 @@ useEffect(() => {
             sm:grid-cols-2
             md:grid-cols-3
             lg:grid-cols-4
-            xl:grid-cols-5
+            xl:grid-cols-4 
             gap-4 sm:gap-6
           "
         >

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 //import { getAllCategories, getAllSubCategories } from "../../services/categoryService";
 //import { getAllProducts, getProductsByCategory, getProductsBySubCategory } from "../../services/productApi";
 import PlantCard from "../../components/ui/PlantCard";
@@ -10,9 +10,7 @@ import {
 } from "../../redux/slices/categorySlice";
 import { useDispatch, useSelector } from "react-redux"; // ✅ add this
 import { fetchProducts } from "../../redux/slices/productSlice";
-
-
-
+import ProductGridShimmer from "../../components/shimmers/ProductGridShimmer";
 /*const Categories = () => {
   const { categoryId } = useParams();
   //const [categories, setCategories] = useState([]);
@@ -120,8 +118,10 @@ import { fetchProducts } from "../../redux/slices/productSlice";
   }, []);*/
 
   const Categories = () => {
-  const { categoryId } = useParams();
+  //const { categoryId } = useParams();
+  const { categoryId, subCategoryId } = useParams(); 
   const dispatch = useDispatch();
+  const navigate = useNavigate(); 
   const scrollRef = useRef(null);
 
   const { categories, subCategories } = useSelector(
@@ -140,7 +140,7 @@ import { fetchProducts } from "../../redux/slices/productSlice";
     dispatch(fetchAllSubCategories());
   }, [dispatch]);
 
-  // ✅ Fetch products based on selected filters
+   // ✅ Fetch products based on selected filters
  useEffect(() => {
   const timer = setTimeout(() => {
     if (selectedSubCategory) {
@@ -153,7 +153,6 @@ import { fetchProducts } from "../../redux/slices/productSlice";
   }, 1000);
   return () => clearTimeout(timer);
 }, [dispatch, selectedCategory, selectedSubCategory]);
-
 
   // ✅ Auto-scroll animation for category bar
   useEffect(() => {
@@ -187,6 +186,7 @@ import { fetchProducts } from "../../redux/slices/productSlice";
               onClick={() => {
                 setSelectedCategory(cat.categoryId);
                 setSelectedSubCategory(null); // reset subcategory
+                navigate(`/products/${cat.categoryId}`);
               }}
             >
               <img
@@ -202,29 +202,31 @@ import { fetchProducts } from "../../redux/slices/productSlice";
             </div>
           ))}
 
-          {/* All Subcategories (no filter) */}
-          {subCategories.map((sub) => (
-            <div
-              key={sub._id}
-              className="flex-shrink-0 cursor-pointer flex flex-col items-center"
-              onClick={() =>
-                setSelectedSubCategory(
-                  selectedSubCategory?._id === sub._id ? null : sub
-                )
-              }
-            >
-              <img
-                src={sub.imageUrl}
-                alt={sub.subCategoryName}
-                className={`w-28 h-28 object-cover rounded-lg border-2 transition ${
-                  selectedSubCategory?._id === sub._id
-                    ? "border-green-600"
-                    : "border-transparent hover:border-green-400"
-                }`}
-              />
-              <p className="text-center mt-2 font-medium">{sub.subCategoryName}</p>
-            </div>
-          ))}
+         {/* 🌱 Subcategories Section */}
+         {subCategories
+          .filter((sub) => sub.categoryId === selectedCategory || selectedCategory === "all")
+          .map((sub) => (
+          <div
+          key={sub._id}
+          className="flex-shrink-0 cursor-pointer flex flex-col items-center"
+          onClick={() => {
+          setSelectedSubCategory(sub);
+          setSelectedCategory(sub.categoryId); // ✅ make sure category updates too
+          navigate(`/products/sub/${sub.subCategoryId || sub._id}`);
+          }}
+          >
+         <img
+         src={sub.imageUrl}
+         alt={sub.subCategoryName}
+         className={`w-28 h-28 object-cover rounded-lg border-2 transition ${
+          selectedSubCategory?._id === sub._id
+            ? "border-green-600"
+            : "border-transparent hover:border-green-400"
+         }`}
+        />
+         <p className="text-center mt-2 font-medium">{sub.subCategoryName}</p>
+        </div>
+        ))}
         </div>
       </div>
     {/* Product Section */}
@@ -240,7 +242,7 @@ import { fetchProducts } from "../../redux/slices/productSlice";
           sm:grid-cols-2 
           md:grid-cols-3 
           lg:grid-cols-4 
-          xl:grid-cols-5 
+          xl:grid-cols-4 
           gap-4 
           sm:gap-6
         "
@@ -249,7 +251,8 @@ import { fetchProducts } from "../../redux/slices/productSlice";
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
   {prodLoading ? (
-    <p className="col-span-full text-center text-gray-500">Loading products...</p>
+    //<p className="col-span-full text-center text-gray-500">Loading products...</p>
+    <ProductGridShimmer />
   ) : products.length > 0 ? (
     products.map((plant) => <PlantCard key={plant._id} plant={plant} />)
   ) : (
